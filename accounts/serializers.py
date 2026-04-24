@@ -13,8 +13,8 @@ from .models import User, Customer, CustomerOTPToken
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     """
-    Used by Admin to register a new staff member (UC-01).
-    Only Admin can create staff accounts.
+    Used to register a new staff member (UC-01).
+    Supervisor and Technician roles only — Admin via createsuperuser.
     """
     password = serializers.CharField(
         write_only=True,
@@ -42,7 +42,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def validate_role(self, value):
-        # Admin cannot create another admin via API
         if value not in ['supervisor', 'technician']:
             raise serializers.ValidationError(
                 'Role must be either supervisor or technician.'
@@ -53,7 +52,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         validated_data.pop('password2')
         password = validated_data.pop('password')
         user = User(**validated_data)
-        user.set_password(password)  # bcrypt hashing via Django
+        user.set_password(password)
         user.save()
         return user
 
@@ -98,10 +97,12 @@ class CustomerSerializer(serializers.ModelSerializer):
             'latitude', 'longitude', 'geocode_status', 'geocoded_at',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['geocode_status', 'geocoded_at', 'created_at', 'updated_at']
+        read_only_fields = [
+            'geocode_status', 'geocoded_at',
+            'created_at', 'updated_at'
+        ]
 
     def validate_email(self, value):
-        # Check for duplicate email on create
         if self.instance is None:
             if Customer.objects.filter(email=value).exists():
                 raise serializers.ValidationError(
@@ -110,10 +111,26 @@ class CustomerSerializer(serializers.ModelSerializer):
         return value
 
 
+class CustomerPublicRegisterSerializer(serializers.ModelSerializer):
+    """
+    Public-facing customer registration serializer. Accepts a small
+    subset of fields so customers can self-register from the frontend.
+    """
+    class Meta:
+        model = Customer
+        fields = ['id', 'name', 'email', 'phone', 'company_name']
+
+    def create(self, validated_data):
+        # Provide minimal defaults for required model fields so the
+        # public endpoint can create a customer with partial data.
+        validated_data.setdefault('address', '')
+        validated_data.setdefault('city', '')
+        return Customer.objects.create(**validated_data)
+
+
 class CustomerPortalSerializer(serializers.ModelSerializer):
     """
     Read-only serializer for customer portal — limited fields only.
-    Customers should not see internal geocoding or admin fields.
     """
     class Meta:
         model = Customer
@@ -131,22 +148,18 @@ class CustomerPortalSerializer(serializers.ModelSerializer):
 class OTPRequestSerializer(serializers.Serializer):
     """
     Step 1 of customer login (UC-03).
-    Customer submits their email to request an OTP.
     """
     email = serializers.EmailField()
 
     def validate_email(self, value):
-        # Security: always return generic message even if email not found
-        # (prevents account enumeration — OTP-06 test case)
         return value
 
 
 class OTPVerifySerializer(serializers.Serializer):
     """
     Step 2 of customer login (UC-03).
-    Customer submits the 6-digit OTP code to verify.
     """
-    email = serializers.EmailField()
+    email    = serializers.EmailField()
     otp_code = serializers.CharField(
         min_length=6,
         max_length=6,
@@ -161,10 +174,9 @@ class OTPVerifySerializer(serializers.Serializer):
         return value
 
     def validate(self, attrs):
-        email = attrs.get('email')
+        email    = attrs.get('email')
         otp_code = attrs.get('otp_code')
 
-        # Find the latest unused OTP token for this email
         try:
             token = CustomerOTPToken.objects.filter(
                 customer_email=email,
@@ -175,34 +187,30 @@ class OTPVerifySerializer(serializers.Serializer):
                 {'otp_code': 'Invalid OTP. Please request a new code.'}
             )
 
-        # Check max attempts (OTP-03 test case)
         if token.attempts >= 3:
             raise serializers.ValidationError(
                 {'otp_code': 'Maximum attempts reached. Request a new OTP.'}
             )
 
-        # Check expiry (OTP-04 test case)
         if timezone.now() > token.expires_at:
             raise serializers.ValidationError(
                 {'otp_code': 'OTP has expired. Please request a new code.'}
             )
 
-        # Check if already used (OTP-05 replay attack)
         if token.is_used:
             raise serializers.ValidationError(
                 {'otp_code': 'OTP already used.'}
             )
 
-        # Hash the submitted code and compare
         hashed_input = hashlib.sha256(otp_code.encode()).hexdigest()
         if token.otp_code != hashed_input:
-            # Increment attempts on wrong code (OTP-02 test case)
             token.attempts += 1
             token.save()
             raise serializers.ValidationError(
                 {'otp_code': 'Invalid OTP.'}
             )
 
-        # All checks passed — attach token to validated data
         attrs['token'] = token
         return attrs
+    
+    

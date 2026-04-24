@@ -47,4 +47,9 @@ urlpatterns = [
     path('auth/customer/verify-otp/',
          views.CustomerOTPVerifyView.as_view(),
          name='customer-verify-otp'),
+
+    # Public customer registration (website signup)
+    path('auth/customer/register/',
+         views.CustomerPublicRegisterView.as_view(),
+         name='customer-register-public'),
 ]

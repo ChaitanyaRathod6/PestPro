@@ -210,6 +210,26 @@ class CustomerListCreateView(APIView):
         )
 
 
+class CustomerPublicRegisterView(APIView):
+    """
+    Public endpoint for customers to self-register from the website.
+    Uses a lightweight serializer that accepts minimal fields.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from .serializers import CustomerPublicRegisterSerializer
+
+        serializer = CustomerPublicRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            customer = serializer.save()
+            return Response(
+                {'message': 'Customer account created.', 'customer': serializer.data},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class CustomerDetailView(APIView):
     """
     Retrieve, update or deactivate a customer (UC-12).
@@ -366,3 +386,27 @@ class CustomerOTPVerifyView(APIView):
             'message': 'Login successful.',
             'customer': CustomerPortalSerializer(customer).data
         }, status=status.HTTP_200_OK)
+    
+
+class StaffRegisterView(APIView):
+    """
+    Staff self registration.
+    AllowAny — no token required for signup.
+    """
+    permission_classes = [AllowAny]  # ← change from IsAdmin to AllowAny
+
+    def post(self, request):
+        serializer = UserRegisterSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({
+                'message': f'Account created for {user.username}.',
+                'user': UserProfileSerializer(user).data
+            }, status=status.HTTP_201_CREATED)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )    

@@ -121,9 +121,7 @@ class ObservationListCreateView(APIView):
         if serializer.is_valid():
             observation = serializer.save()
 
-            from alerts.engine import SmartAlertEngine
-            SmartAlertEngine.run(observation)
-
+            
 
             return Response(
                 ServiceObservationSerializer(

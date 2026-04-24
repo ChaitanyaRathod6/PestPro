@@ -311,3 +311,55 @@ class SmartAlertEngine:
             priority=priority,
             email_sent=False
         )
+
+    def _rule_r02(self, rodent_obs):
+        """
+        R-02: Bait consumed but NOT replaced in same visit.
+        """
+        print(f'R-02 check: bait_consumed={rodent_obs.bait_consumed} bait_replaced={rodent_obs.bait_replaced}')
+    
+        if rodent_obs.bait_consumed and not rodent_obs.bait_replaced:
+            print('R-02 TRIGGERED — creating alert')
+            self._create_alert(
+                alert_type='warning',
+                priority='medium',
+                rule='R-02',
+                title=f'Bait Not Replaced — Box {rodent_obs.rodent_box_id}',
+                message=(
+                    f'Bait was consumed at Box {rodent_obs.rodent_box_id} '
+                    f'but was not replaced during this visit. '
+                    f'Please schedule a follow-up to replenish bait.'
+                    )
+                )
+            
+        else:
+            print('R-02 NOT triggered')    
+
+    def _run_rodent_rules(self):
+        print(f'Running rodent rules for observation {self.observation.id}')
+        try:
+            rodent_obs = self.observation.rodent_detail
+            print(f'Rodent detail found: {rodent_obs}')
+        except RodentObservation.DoesNotExist:
+            print('ERROR: No rodent detail found for this observation')
+            return
+
+        self._rule_r01(rodent_obs)
+        self._rule_r02(rodent_obs)
+        self._rule_r03()        
+
+
+    def _create_alert(self, alert_type, priority, rule, title, message):
+        print(f'Creating alert: rule={rule} priority={priority} title={title}')
+        alert = SmartAlert.objects.create(
+            job=self.job,
+            observation=self.observation,
+            alert_type=alert_type,
+            pest_category=self.category,
+            title=title,
+            message=message,
+            rule_triggered=rule,
+            priority=priority,
+            email_sent=False
+        )
+        print(f'Alert created with id={alert.id}')    

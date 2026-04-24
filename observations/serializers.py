@@ -231,7 +231,8 @@ class ServiceObservationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # Extract child data before creating base observation
+   
+
         rodent_data         = validated_data.pop('rodent_detail', None)
         flying_insect_data  = validated_data.pop('flying_insect_detail', None)
         cockroach_data      = validated_data.pop('cockroach_detail', None)
@@ -239,14 +240,14 @@ class ServiceObservationSerializer(serializers.ModelSerializer):
         mosquito_data       = validated_data.pop('mosquito_detail', None)
         general_data        = validated_data.pop('general_detail', None)
 
-        # Set recorded_by from request user
+    # Set recorded_by from request user
         request = self.context.get('request')
         validated_data['recorded_by'] = request.user
 
-        # Create the base observation record
+    # Create the base observation record
         observation = ServiceObservation.objects.create(**validated_data)
 
-        # Create the matching child record
+    # Create the matching child record FIRST
         if rodent_data:
             RodentObservation.objects.create(
                 observation=observation, **rodent_data
@@ -272,10 +273,19 @@ class ServiceObservationSerializer(serializers.ModelSerializer):
                 observation=observation, **general_data
             )
 
-        # Update job status to observations_recorded
+    # Update job status to observations_recorded
         job = observation.job
         if job.status == 'in_progress':
             job.status = 'observations_recorded'
             job.save()
+
+    # NOW run SmartAlertEngine AFTER child record is saved
+        try:
+            from alerts.engine import SmartAlertEngine
+            engine = SmartAlertEngine(observation)
+            engine.run()
+            print(f'SmartAlertEngine ran successfully for observation {observation.id}')
+        except Exception as e:
+            print(f'SmartAlertEngine error: {e}')
 
         return observation
