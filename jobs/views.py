@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from .models import ServiceJob
+from accounts.models import User
 from .serializers import (
     ServiceJobCreateSerializer,
     ServiceJobListSerializer,
@@ -326,3 +327,113 @@ class JobHealthCheckView(APIView):
             'status': 'ok',
             'db':     db_status,
         })
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+
+@csrf_exempt
+@login_required
+def supervisor_dashboard_api(request):
+    # 1. Fetch real technicians
+    tech_users = User.objects.filter(role='technician')
+    
+    # 2. Get real count from DB
+    total_open_jobs = ServiceJob.objects.filter(status='open').count()
+    
+    # DEBUG: Check your terminal to see this number!
+    print(f"--- Dashboard Debug: Found {total_open_jobs} open jobs in database ---")
+
+    technicians_data = []
+    alerts_data = []
+    
+    for tech in tech_users:
+        first_name = tech.first_name if tech.first_name else tech.username
+        last_name = tech.last_name if tech.last_name else ""
+        initials = (first_name[0] + (last_name[0] if last_name else "")).upper()
+        
+        # Determine status
+        current_status = "active" if tech.is_active else "offline"
+
+        technicians_data.append({
+            "id": tech.id,
+            "name": f"{first_name} {last_name}".strip(),
+            "status": current_status,
+            "initials": initials,
+            "job": "Monitoring...", 
+            "color": "#3b82f6",
+            "lat": 23.0225,
+            "lng": 72.5714
+        })
+
+        # ALERT LOGIC (Must be inside the for loop)
+        if current_status == "offline":
+            alerts_data.append({
+                "id": f"alert-{tech.id}",
+                "type": "error",
+                "message": f"Technician {tech.username} is currently offline.",
+                "time": "Just now"
+            })
+
+    return JsonResponse({
+        "technicians": technicians_data,
+        "alerts": alerts_data,
+        "total_open_jobs": total_open_jobs, # This will now be the real number
+    })
+
+
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .models import ServiceJob
+
+@login_required # Ensures only the logged-in technician can see their data
+def technician_dashboard_api(request):
+    user = request.user
+    
+    # 1. Fetch only jobs assigned to THIS technician
+    # (Assuming your ServiceJob model has a 'technician' foreign key)
+    my_jobs = ServiceJob.objects.filter(technician=user)
+    
+    jobs_list = []
+    for index, job in enumerate(my_jobs, start=1):
+        # Determine status mapping for React component
+        badge_cls = "pending"
+        btn_text = "Navigate"
+        
+        if job.status == "in_progress":
+            badge_cls = "inprogress"
+            btn_text = "Complete"
+        elif job.status == "completed":
+            badge_cls = "done"
+            btn_text = "View"
+
+        jobs_list.append({
+            "num": index,
+            "label": f"Job #{job.id} · Today",
+            "name": job.service_type, # e.g., 'Pest Control'
+            "addr": job.address,
+            "badge": job.status.replace('_', ' ').title(),
+            "badgeCls": badge_cls,
+            "btn": btn_text,
+            "btnCls": "primary" if badge_cls == "inprogress" else "secondary"
+        })
+
+    # 2. Equipment Stats (This could eventually come from a 'Inventory' model)
+    equip_stats = [
+        {"label": "Chemical Supply", "pct": 78, "cls": ""},
+        {"label": "Battery Level", "pct": 91, "cls": ""},
+        {"label": "Spray Pressure", "pct": 55, "cls": "warn"},
+        {"label": "Fuel Reserve", "pct": 22, "cls": "low"},
+    ]
+
+    return JsonResponse({
+        "jobs": jobs_list,
+        "equipment": equip_stats,
+        "summary": {
+            "total": my_jobs.count(),
+            "completed": my_jobs.filter(status='completed').count(),
+            "in_progress": my_jobs.filter(status='in_progress').count(),
+            "pending": my_jobs.filter(status='pending').count(),
+        }
+    })    

@@ -384,7 +384,7 @@ const S = `
 }
 @media (max-width: 600px) {
   .sup-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .sup-content { padding: 16px; }
+  .sup-content { padding: 166px; }
   .sup-topbar { padding: 0 14px; }
   .sup-stat-val { font-size: 22px; }
   .sup-metrics-col { flex-direction: column; }
@@ -393,9 +393,6 @@ const S = `
 }
 `
 
-/* ─────────────────────────────────────────────
-   CONSTANTS
-───────────────────────────────────────────── */
 const navItems = [
   { id: 'overview', label: 'Overview',      d: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
   { id: 'team',     label: 'Team Activity', d: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
@@ -403,38 +400,6 @@ const navItems = [
   { id: 'reports',  label: 'Reports',       d: 'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
   { id: 'alerts',   label: 'Alerts',        d: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
   { id: 'settings', label: 'Settings',      d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
-]
-
-const techs = [
-  { initials: 'MJ', color: '#1a6b3c', name: 'Marcus Johnson',  job: 'Pest Control – Sycamore Park',   status: 'active'  },
-  { initials: 'AL', color: '#1a4e8c', name: 'Amy Lee',          job: 'Termite Inspection – Clayfield',  status: 'active'  },
-  { initials: 'RK', color: '#7b3fa0', name: 'Raj Kumar',        job: 'Rodent Proofing – Eastview',      status: 'active'  },
-  { initials: 'TD', color: '#e6a817', name: 'Tom Davies',       job: 'En route – Northfields',          status: 'idle'    },
-  { initials: 'NP', color: '#5a6e5a', name: 'Nina Patel',       job: 'Break – Westside',                status: 'offline' },
-]
-
-const alertItems = [
-  {
-    type: 'warn', label: 'Low Supply · 12 min ago',
-    msg: 'Marcus Johnson – Fuel reserve critical at 22%',
-    badge: 'Warning', badgeCls: 'warn', btn: 'View', btnCls: 'secondary',
-    iconPath: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
-    iconColor: '#e6a817',
-  },
-  {
-    type: 'err', label: 'Missed Check-in · 34 min ago',
-    msg: 'Tom Davies has not checked in for 45 minutes',
-    badge: 'Urgent', badgeCls: 'err', btn: 'Contact', btnCls: 'primary',
-    iconPath: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-    iconColor: '#e74c3c',
-  },
-  {
-    type: 'info', label: 'Job Complete · 1 hr ago',
-    msg: 'Amy Lee completed Termite Inspection at Clayfield',
-    badge: 'Info', badgeCls: 'ok', btn: 'Review', btnCls: 'secondary',
-    iconPath: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-    iconColor: '#1a6b3c',
-  },
 ]
 
 const TECH_OFFSETS = [
@@ -461,6 +426,12 @@ export default function SupervisorDashboard() {
   const [accuracy,    setAccuracy]    = useState(null)
   const [countdown,   setCountdown]   = useState(AUTO_REFRESH_SECS)
 
+  // API STATE
+  const [techs,       setTechs]       = useState([])
+  const [alertItems,  setAlertItems]  = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [openJobs, setOpenJobs] = useState(0)
+
   const mapRef    = useRef(null)
   const markerRef = useRef(null)
   const circleRef = useRef(null)
@@ -469,15 +440,64 @@ export default function SupervisorDashboard() {
 
   const userName     = displayName(user)
   const userInitials = initials(userName)
+// ONLY showing corrected parts — rest of your file remains EXACT SAME
 
-  const activeTechs  = techs.filter(t => t.status === 'active').length
-  const idleTechs    = techs.filter(t => t.status === 'idle').length
-  const pendingAlerts = alertItems.filter(a => a.type !== 'info').length
+// ✅ FIXED COUNTS (already correct — kept same)
+const activeTechs = techs.filter(
+  t => (t.status || '').toLowerCase() === 'active'
+).length
 
-  /* ── Auto-refresh countdown ── */
+const idleTechs = techs.filter(
+  t => (t.status || '').toLowerCase() === 'idle'
+).length
+
+const pendingAlerts = alertItems.filter(
+  a => (a.type || '').toLowerCase() !== 'info'
+).length
+
+
+/* ── API FETCH FUNCTION ── */
+const fetchDashboardData = async () => {
+  try {
+    const response = await fetch('http://127.0.0.1:8000/api/supervisor/dashboard/', {
+      headers: {
+        // 'Authorization': `Bearer ${user?.token || ''}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) throw new Error('Network response was not ok');
+
+    const data = await response.json();
+
+    // ✅ DEBUG LOGS (CORRECT PLACE)
+    console.log("API DATA:", data);
+    console.log("TECHS:", data.technicians);
+    console.log("TOKEN:", user?.token);
+
+    setTechs(data.technicians || []);
+    setAlertItems(data.alerts || []);
+    setOpenJobs(data.total_open_jobs || 0);
+
+  } catch (error) {
+    console.error("Failed to fetch dashboard data:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  /* ── Auto-refresh countdown & API Polling ── */
   useEffect(() => {
+    fetchDashboardData(); // Initial fetch
+    
     tickRef.current = setInterval(() => {
-      setCountdown(c => (c <= 1 ? AUTO_REFRESH_SECS : c - 1))
+      setCountdown(c => {
+        if (c <= 1) {
+            fetchDashboardData();
+            return AUTO_REFRESH_SECS;
+        }
+        return c - 1;
+      })
     }, 1000)
     return () => clearInterval(tickRef.current)
   }, [])
@@ -534,7 +554,7 @@ export default function SupervisorDashboard() {
     }).addTo(map)
     mapRef.current = map
 
-    // Supervisor — green pulsing dot
+    // Supervisor icon
     const supIcon = () => L.divIcon({
       className: '',
       html: `
@@ -556,18 +576,18 @@ export default function SupervisorDashboard() {
       fillColor: '#1a6b3c', fillOpacity: 0.08, weight: 1,
     }).addTo(map)
 
-    // Technician markers
+    // Technician markers (updated via techs state if needed, but here initially loaded)
     techs.forEach((t, i) => {
-      const [dlat, dlng] = TECH_OFFSETS[i]
-      const ll = [fallback[0] + dlat, fallback[1] + dlng]
+      const offset = TECH_OFFSETS[i] || [0,0]
+      const ll = [fallback[0] + offset[0], fallback[1] + offset[1]]
       const icon = L.divIcon({
         className: '',
         html: `
-          <div style="width:26px;height:26px;border-radius:50%;background:${t.color};
+          <div style="width:26px;height:26px;border-radius:50%;background:${t.color || '#1a6b3c'};
             border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);
             display:flex;align-items:center;justify-content:center;
             font-size:9px;color:#fff;font-family:serif;">
-            ${t.initials}
+            ${t.initials || '??'}
           </div>`,
         iconSize: [26, 26], iconAnchor: [13, 13],
       })
@@ -584,8 +604,8 @@ export default function SupervisorDashboard() {
         setCoords({ lat: lat.toFixed(6), lng: lng.toFixed(6) })
         setAccuracy(Math.round(acc))
         setGeoStatus('live')
-        markerRef.current.setLatLng(ll)
-        circleRef.current.setLatLng(ll).setRadius(acc)
+        if (markerRef.current) markerRef.current.setLatLng(ll)
+        if (circleRef.current) circleRef.current.setLatLng(ll).setRadius(acc)
         map.panTo(ll, { animate: true, duration: 1.2 })
       },
       (err) => {
@@ -635,7 +655,6 @@ export default function SupervisorDashboard() {
             ))}
           </nav>
 
-          {/* ── USER + LOGOUT ICON ── */}
           <div className="sup-sb-user">
             <div className="sup-sb-avatar">{userInitials}</div>
             <div style={{flex:1, minWidth:0}}>
@@ -654,8 +673,6 @@ export default function SupervisorDashboard() {
 
         {/* ── MAIN ── */}
         <div className="sup-main">
-
-          {/* Topbar */}
           <div className="sup-topbar">
             <div className="sup-topbar-left">
               <button className="sup-hamburger" onClick={() => setSidebarOpen(o => !o)}>
@@ -669,7 +686,7 @@ export default function SupervisorDashboard() {
             </div>
             <div className="sup-topbar-right">
               <span className="sup-ticker">↻ in {countdown}s</span>
-              <button className="sup-alert-btn">
+              <button className="sup-alert-btn" onClick={fetchDashboardData}>
                 <svg viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
@@ -678,126 +695,123 @@ export default function SupervisorDashboard() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="sup-content">
             <div className="sup-page-title">Team Activity</div>
             <div className="sup-page-sub">
               Tuesday, 24 Apr · {activeTechs} Technicians Active
             </div>
 
-            {/* ── STATS ── */}
-            <div className="sup-stats">
-              <div className="sup-stat">
-                <div className="sup-stat-label">Active Techs</div>
-                <div className="sup-stat-val green">{activeTechs}</div>
-                <div className="sup-stat-sub">On route now</div>
-              </div>
-
-              <div className="sup-stat">
-                <div className="sup-stat-label">Pending Alerts</div>
-                <div className="sup-stat-val amber">{pendingAlerts}</div>
-                {pendingAlerts > 0
-                  ? <span className="sup-stat-chip warn">{pendingAlerts} require action</span>
-                  : <span className="sup-stat-chip">All Clear ✓</span>
-                }
-              </div>
-
-              <div className="sup-stat">
-                <div className="sup-stat-label">Open Jobs</div>
-                <div className="sup-stat-val">12</div>
-                <div className="sup-stat-sub">Across all teams</div>
-              </div>
-
-              <div className="sup-stat">
-                <div className="sup-stat-label">Avg Response</div>
-                <div className="sup-stat-val">18m</div>
-                <div className="sup-stat-sub">Today's average</div>
-              </div>
-            </div>
-
-            {/* ── MAP + TEAM LIST ROW ── */}
-            <div className="sup-row">
-              {/* Live Map */}
-              <div className="sup-card">
-                <div className="sup-map-wrap">
-                  <div className={`sup-map-pill ${pillCls}`}>
-                    <span className="sup-pulse-dot"/>
-                    {pillTxt}
-                  </div>
-                  <div id="sup-live-map"/>
+            {loading ? (
+                <div className="sup-loading"><div className="sup-spinner" /> Syncing Dashboard...</div>
+            ) : (
+                <>
+                <div className="sup-stats">
+                    <div className="sup-stat">
+                        <div className="sup-stat-label">Active Techs</div>
+                        <div className="sup-stat-val green">{activeTechs}</div>
+                        <div className="sup-stat-sub">On route now</div>
+                    </div>
+                    <div className="sup-stat">
+                        <div className="sup-stat-label">Pending Alerts</div>
+                        <div className="sup-stat-val amber">{pendingAlerts}</div>
+                        {pendingAlerts > 0
+                        ? <span className="sup-stat-chip warn">{pendingAlerts} require action</span>
+                        : <span className="sup-stat-chip">All Clear ✓</span>
+                        }
+                    </div>
+                    <div className="sup-stat">
+                        <div className="sup-stat-label">Open Jobs</div>
+                        <div className="sup-stat-val">{openJobs}</div>
+                        <div className="sup-stat-sub">Across all teams</div>
+                    </div>
+                    <div className="sup-stat">
+                        <div className="sup-stat-label">Avg Response</div>
+                        <div className="sup-stat-val">18m</div>
+                        <div className="sup-stat-sub">Today's average</div>
+                    </div>
                 </div>
-                <div className="sup-loc-bar">
-                  <div className="sup-loc-cell">
-                    <div className="sup-loc-label">Latitude</div>
-                    <div className="sup-loc-val">{coords ? coords.lat : '—'}</div>
-                  </div>
-                  <div className="sup-loc-cell">
-                    <div className="sup-loc-label">Longitude</div>
-                    <div className="sup-loc-val">{coords ? coords.lng : '—'}</div>
-                  </div>
-                  <div className="sup-loc-cell">
-                    <div className="sup-loc-label">Accuracy</div>
-                    <div className="sup-loc-val">{accuracy !== null ? `±${accuracy}m` : '—'}</div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Right column: tech list + summary card */}
-              <div className="sup-metrics-col">
-                <div className="sup-card">
-                  <div className="sup-card-inner">
-                    <div className="sup-card-title">Active Technicians</div>
-                    {techs.map((t, i) => (
-                      <div className="sup-tech-row" key={i}>
-                        <div className="sup-tech-av" style={{background: t.color}}>{t.initials}</div>
-                        <div className="sup-tech-info">
-                          <div className="sup-tech-name">{t.name}</div>
-                          <div className="sup-tech-job">{t.job}</div>
+                <div className="sup-row">
+                    <div className="sup-card">
+                        <div className="sup-map-wrap">
+                        <div className={`sup-map-pill ${pillCls}`}>
+                            <span className="sup-pulse-dot"/>
+                            {pillTxt}
                         </div>
-                        <div className={`sup-status-dot ${t.status}`}/>
-                      </div>
-                    ))}
-                  </div>
+                        <div id="sup-live-map"/>
+                        </div>
+                        <div className="sup-loc-bar">
+                        <div className="sup-loc-cell">
+                            <div className="sup-loc-label">Latitude</div>
+                            <div className="sup-loc-val">{coords ? coords.lat : '—'}</div>
+                        </div>
+                        <div className="sup-loc-cell">
+                            <div className="sup-loc-label">Longitude</div>
+                            <div className="sup-loc-val">{coords ? coords.lng : '—'}</div>
+                        </div>
+                        <div className="sup-loc-cell">
+                            <div className="sup-loc-label">Accuracy</div>
+                            <div className="sup-loc-val">{accuracy !== null ? `±${accuracy}m` : '—'}</div>
+                        </div>
+                        </div>
+                    </div>
+
+                    <div className="sup-metrics-col">
+                        <div className="sup-card">
+                        <div className="sup-card-inner">
+                            <div className="sup-card-title">Active Technicians</div>
+                            {techs.map((t, i) => (
+                            <div className="sup-tech-row" key={i}>
+                                <div className="sup-tech-av" style={{background: t.color}}>{t.initials}</div>
+                                <div className="sup-tech-info">
+                                <div className="sup-tech-name">{t.name}</div>
+                                <div className="sup-tech-job">{t.job}</div>
+                                </div>
+                                <div className={`sup-status-dot ${(t.status || '').toLowerCase()}`}/>
+                            </div>
+                            ))}
+                        </div>
+                        </div>
+
+                        <div className="sup-green-card">
+                        <div className="sup-green-card-title">Live Team Status</div>
+                        <div className="sup-green-card-val">{activeTechs} Active</div>
+                        <div className="sup-green-card-sub">
+                            {idleTechs} idle · {techs.filter(t => (t.status || '').toLowerCase() === 'offline').length} offline · {pendingAlerts} alerts open
+                        </div>
+                        <button className="sup-green-card-btn" onClick={fetchDashboardData}>↻ Refresh Team Data</button>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="sup-green-card">
-                  <div className="sup-green-card-title">Live Team Status</div>
-                  <div className="sup-green-card-val">{activeTechs} Active</div>
-                  <div className="sup-green-card-sub">
-                    {idleTechs} idle · {techs.filter(t => t.status === 'offline').length} offline · {pendingAlerts} alerts open
-                  </div>
-                  <button className="sup-green-card-btn">↻ Refresh Team Data</button>
+                <div className="sup-section-hdr">
+                    <div className="sup-section-title">
+                        Recent Alerts
+                        {pendingAlerts > 0 && (
+                        <span style={{fontSize:12,color:'#e74c3c',background:'#fde8e8',padding:'2px 8px',borderRadius:6}}>
+                            {pendingAlerts}
+                        </span>
+                        )}
+                    </div>
+                    <span className="sup-section-sub">SORTED BY: TIME</span>
                 </div>
-              </div>
-            </div>
-
-            {/* ── ALERTS ── */}
-            <div className="sup-section-hdr">
-              <div className="sup-section-title">
-                Recent Alerts
-                {pendingAlerts > 0 && (
-                  <span style={{fontSize:12,color:'#e74c3c',background:'#fde8e8',padding:'2px 8px',borderRadius:6}}>
-                    {pendingAlerts}
-                  </span>
-                )}
-              </div>
-              <span className="sup-section-sub">SORTED BY: TIME</span>
-            </div>
-            {alertItems.map((a, i) => (
-              <div className="sup-alert-card" key={i}>
-                <div className={`sup-alert-icon ${a.type}`}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke={a.iconColor} strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d={a.iconPath}/>
-                  </svg>
-                </div>
-                <div className="sup-alert-info">
-                  <div className="sup-alert-lbl">{a.label}</div>
-                  <div className="sup-alert-msg">{a.msg}</div>
-                </div>
-                <span className={`sup-badge ${a.badgeCls}`}>{a.badge}</span>
-                <button className={`sup-btn ${a.btnCls}`}>{a.btn}</button>
-              </div>
-            ))}
+                {alertItems.map((a, i) => (
+                    <div className="sup-alert-card" key={i}>
+                        <div className={`sup-alert-icon ${a.type}`}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke={a.iconColor} strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d={a.iconPath}/>
+                        </svg>
+                        </div>
+                        <div className="sup-alert-info">
+                        <div className="sup-alert-lbl">{a.label}</div>
+                        <div className="sup-alert-msg">{a.message}</div>
+                        </div>
+                        <span className={`sup-badge ${a.badgeCls}`}>{a.badge}</span>
+                        <button className={`sup-btn ${a.btnCls}`}>{a.btn}</button>
+                    </div>
+                ))}
+                </>
+            )}
           </div>
         </div>
       </div>

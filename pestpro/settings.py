@@ -52,10 +52,13 @@ INSTALLED_APPS = [
     'portal',
     'rest_framework',
     'rest_framework_simplejwt',
+    'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # MUST BE AT THE TOP
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',  # ← must be here
     'django.middleware.common.CommonMiddleware',
@@ -64,7 +67,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'pestpro.urls'
 

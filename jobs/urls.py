@@ -36,4 +36,8 @@ urlpatterns = [
     path('jobs/technician/<int:technician_id>/',
          views.JobsByTechnicianView.as_view(),
          name='jobs-by-technician'),
+
+    path('supervisor/dashboard/', views.supervisor_dashboard_api, name='supervisor_api'), 
+
+    path('api/technician-dashboard/', views.technician_dashboard_api, name='tech_api'),    
 ]
