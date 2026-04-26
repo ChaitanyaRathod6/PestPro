@@ -1202,6 +1202,7 @@ const jobBadgeClass = (status = '') => {
   if (s === 'in_progress')                          return 'inprogress'
   if (s === 'completed' || s === 'report_sent')     return 'done'
   if (s === 'cancelled')                            return 'cancelled'
+  if (s === 'observations_recorded')                          return 'done'
   return 'pending'
 }
 
@@ -1210,6 +1211,7 @@ const jobBadgeLabel = (status = '') => {
   const s = status.toLowerCase()
   if (s === 'in_progress')  return 'In Progress'
   if (s === 'completed' || s === 'report_sent') return 'Completed'
+  if (s === 'observations_recorded')    return 'Obs. Recorded'
   if (s === 'cancelled')    return 'Cancelled'
   if (s === 'scheduled')    return 'Scheduled'
   return 'Pending'
@@ -1468,10 +1470,12 @@ export default function TechnicianDashboard() {
   const completedJobs  = jobs.filter(j => ['completed','report_sent'].includes(j.status)).length
   const inProgressJobs = jobs.filter(j => j.status === 'in_progress').length
   const pendingJobs    = jobs.filter(j => ['pending','scheduled'].includes(j.status)).length
-  const remainingJobs  = inProgressJobs + pendingJobs
+ const remainingJobs = jobs.filter(j =>
+  !['completed', 'report_sent', 'cancelled'].includes(j.status)
+).length
 
-  const equipLowCount  = equip.filter(e => e.cls === 'low').length
-  const equipGoodCount = equip.filter(e => e.cls === '').length
+const equipLowCount  = equip.filter(e => e.pct < 60).length
+const equipGoodCount = equip.filter(e => e.pct >= 60).length
 
   const pillCls = geoStatus === 'live' ? 'live' : geoStatus === 'error' ? 'error' : 'acquiring'
   const pillTxt = geoStatus === 'live' ? 'Live Location'

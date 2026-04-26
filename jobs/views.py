@@ -16,6 +16,10 @@ from .serializers import (
     JobCompleteSerializer
 )
 from accounts.views import IsAdmin, IsAdminOrSupervisor
+import datetime 
+today = datetime.date.today()
+from django.utils import timezone
+today = timezone.localdate() 
 
 
 # =============================================================================
@@ -329,111 +333,147 @@ class JobHealthCheckView(APIView):
         })
 
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
-@csrf_exempt
-@login_required
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def supervisor_dashboard_api(request):
-    # 1. Fetch real technicians
-    tech_users = User.objects.filter(role='technician')
-    
-    # 2. Get real count from DB
-    total_open_jobs = ServiceJob.objects.filter(status='open').count()
-    
-    # DEBUG: Check your terminal to see this number!
-    print(f"--- Dashboard Debug: Found {total_open_jobs} open jobs in database ---")
+
+    tech_users = User.objects.filter(role='technician', is_active=True)
+
+    open_jobs      = ServiceJob.objects.filter(status__in=['scheduled','in_progress']).count()
+    active_jobs    = ServiceJob.objects.filter(status='in_progress').count()
+    scheduled_jobs = ServiceJob.objects.filter(status='scheduled').count()
+    completed_jobs = ServiceJob.objects.filter(status__in=['completed','report_sent']).count()
+    total_observations = ServiceObservation.objects.count()
+
+    active_technicians = ServiceJob.objects.filter(
+        status='in_progress'
+    ).values('assigned_technician').distinct().count()
 
     technicians_data = []
-    alerts_data = []
-    
     for tech in tech_users:
-        first_name = tech.first_name if tech.first_name else tech.username
-        last_name = tech.last_name if tech.last_name else ""
-        initials = (first_name[0] + (last_name[0] if last_name else "")).upper()
-        
-        # Determine status
-        current_status = "active" if tech.is_active else "offline"
+        first_name = tech.first_name or tech.username
+        last_name  = tech.last_name or ''
+        ini        = (first_name[0] + (last_name[0] if last_name else '')).upper()
+
+        active_job = ServiceJob.objects.filter(
+            assigned_technician=tech,
+            status='in_progress'
+        ).first()
 
         technicians_data.append({
-            "id": tech.id,
-            "name": f"{first_name} {last_name}".strip(),
-            "status": current_status,
-            "initials": initials,
-            "job": "Monitoring...", 
-            "color": "#3b82f6",
-            "lat": 23.0225,
-            "lng": 72.5714
+            'id':       tech.id,
+            'name':     f'{first_name} {last_name}'.strip(),
+            'status':   'active' if active_job else 'idle',
+            'initials': ini,
+            'job':      active_job.service_type.replace('_',' ').title() if active_job else 'No active job',
+            'color':    '#1a6b3c' if active_job else '#e6a817',
         })
 
-        # ALERT LOGIC (Must be inside the for loop)
-        if current_status == "offline":
-            alerts_data.append({
-                "id": f"alert-{tech.id}",
-                "type": "error",
-                "message": f"Technician {tech.username} is currently offline.",
-                "time": "Just now"
-            })
-
-    return JsonResponse({
-        "technicians": technicians_data,
-        "alerts": alerts_data,
-        "total_open_jobs": total_open_jobs, # This will now be the real number
+    return Response({
+        'technicians':        technicians_data,
+        'total_open_jobs':    open_jobs,
+        'active_jobs':        active_jobs,
+        'scheduled_jobs':     scheduled_jobs,
+        'completed_jobs':     completed_jobs,
+        'total_observations': total_observations,
+        'active_technicians': active_technicians,
     })
 
-
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from .models import ServiceJob
 
-@login_required # Ensures only the logged-in technician can see their data
+from django.utils import timezone          # ← ADD THIS
+from jobs.models import ServiceJob
+from observations.models import (
+    RodentObservation, MosquitoObservation,
+    FlyingInsectObservation, GeneralObservation,
+    ServiceObservation, TermiteObservation,
+    CockroachObservation
+)
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def technician_dashboard_api(request):
     user = request.user
-    
-    # 1. Fetch only jobs assigned to THIS technician
-    # (Assuming your ServiceJob model has a 'technician' foreign key)
-    my_jobs = ServiceJob.objects.filter(technician=user)
-    
+
+    # ✅ FIXED — define today FIRST at the top
+    today = timezone.localdate()                    # IST date, not UTC
+    today_str = today.strftime('%A, %d %b')
+
+    # ✅ FIXED — now 'today' exists when filter runs
+    my_jobs = ServiceJob.objects.filter(
+        assigned_technician=user,
+        scheduled_datetime__date=today
+    ).order_by('scheduled_datetime')
+
     jobs_list = []
     for index, job in enumerate(my_jobs, start=1):
-        # Determine status mapping for React component
-        badge_cls = "pending"
-        btn_text = "Navigate"
-        
-        if job.status == "in_progress":
-            badge_cls = "inprogress"
-            btn_text = "Complete"
-        elif job.status == "completed":
-            badge_cls = "done"
-            btn_text = "View"
-
         jobs_list.append({
-            "num": index,
-            "label": f"Job #{job.id} · Today",
-            "name": job.service_type, # e.g., 'Pest Control'
-            "addr": job.address,
-            "badge": job.status.replace('_', ' ').title(),
-            "badgeCls": badge_cls,
-            "btn": btn_text,
-            "btnCls": "primary" if badge_cls == "inprogress" else "secondary"
+            'id':             job.id,
+            'num':            index,
+            'status':         job.status,
+            'service_type':   job.service_type,
+            'customer_name':  job.customer.name if job.customer else '',
+            'address':        job.site_address,
+            'scheduled_date': str(job.scheduled_datetime.date()) if job.scheduled_datetime else '',
         })
 
-    # 2. Equipment Stats (This could eventually come from a 'Inventory' model)
+    # Dynamic equipment from observations
+    bait_replaced_count = RodentObservation.objects.filter(
+        observation__recorded_by=user,
+        bait_replaced=True
+    ).count()
+
+    fogging_count = MosquitoObservation.objects.filter(
+        observation__recorded_by=user,
+        fogging_done=True
+    ).count()
+
+    chemical_pct = max(5,  100 - (bait_replaced_count * 8) - (fogging_count * 12))
+    battery_pct  = max(10, 100 - (my_jobs.count() * 3))
+    pressure_pct = max(5,  100 - (bait_replaced_count * 5) - (fogging_count * 8))
+    fuel_pct     = max(5,  100 - (my_jobs.count() * 6))
+
+    def get_cls(pct):
+        if pct < 30: return 'low'
+        if pct < 60: return 'warn'
+        return ''
+
     equip_stats = [
-        {"label": "Chemical Supply", "pct": 78, "cls": ""},
-        {"label": "Battery Level", "pct": 91, "cls": ""},
-        {"label": "Spray Pressure", "pct": 55, "cls": "warn"},
-        {"label": "Fuel Reserve", "pct": 22, "cls": "low"},
+        {'label': 'Chemical Supply', 'pct': chemical_pct, 'cls': get_cls(chemical_pct)},
+        {'label': 'Battery Level',   'pct': battery_pct,  'cls': get_cls(battery_pct)},
+        {'label': 'Spray Pressure',  'pct': pressure_pct, 'cls': get_cls(pressure_pct)},
+        {'label': 'Fuel Reserve',    'pct': fuel_pct,     'cls': get_cls(fuel_pct)},
     ]
 
+    low_count = sum(1 for e in equip_stats if e['pct'] < 60)
+
+    remaining       = my_jobs.exclude(status__in=['completed', 'report_sent', 'cancelled']).count()
+    total           = my_jobs.count()
+    completed_count = my_jobs.filter(status__in=['completed', 'report_sent']).count()
+    in_progress_count = my_jobs.filter(status='in_progress').count()
+
     return JsonResponse({
-        "jobs": jobs_list,
-        "equipment": equip_stats,
-        "summary": {
-            "total": my_jobs.count(),
-            "completed": my_jobs.filter(status='completed').count(),
-            "in_progress": my_jobs.filter(status='in_progress').count(),
-            "pending": my_jobs.filter(status='pending').count(),
+        'jobs':           jobs_list,
+        'equipment':      equip_stats,
+        'today_date':     today_str,
+        'remaining_jobs': remaining,
+        'summary': {
+            'total':       total,
+            'completed':   completed_count,
+            'in_progress': in_progress_count,
+            'remaining':   remaining,
+            'equip_low':   low_count,
+            'equip_total': len(equip_stats),
         }
-    })    
+    })

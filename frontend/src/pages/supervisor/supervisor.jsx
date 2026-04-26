@@ -68,7 +68,7 @@ const S = `
 .sup-content{padding:22px 24px;flex:1;}
 .sup-page-title{font-size:22px;color:var(--ink);margin-bottom:3px;}
 .sup-page-sub{font-size:13px;color:var(--pale);margin-bottom:20px;}
-.sup-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.sup-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px;}
 .sup-stat{background:var(--white);border-radius:14px;padding:18px 20px;box-shadow:0 1px 8px rgba(0,0,0,.05);}
 .sup-stat-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--pale);margin-bottom:8px;}
 .sup-stat-val{font-size:28px;color:var(--ink);letter-spacing:-1px;line-height:1;}
@@ -149,7 +149,7 @@ const S = `
 .sup-pct-row{display:flex;align-items:center;gap:8px;}
 .sup-pct-bar{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;min-width:50px;}
 .sup-pct-fill{height:100%;border-radius:3px;transition:width .3s;}
-@media(max-width:1024px){.sup-stats{grid-template-columns:repeat(2,1fr);}  .sup-row{grid-template-columns:1fr;}#sup-live-map{height:260px;}.sup-metrics-col{flex-direction:row;flex-wrap:wrap;}.sup-metrics-col>*{flex:1 1 calc(50% - 5px);}}
+@media(max-width:1024px){.sup-stats{grid-template-columns:repeat(3,1fr);}  .sup-row{grid-template-columns:1fr;}#sup-live-map{height:260px;}.sup-metrics-col{flex-direction:row;flex-wrap:wrap;}.sup-metrics-col>*{flex:1 1 calc(50% - 5px);}}
 @media(max-width:768px){.sup-sidebar{transform:translateX(-100%);}.sup-sidebar.open{transform:translateX(0)!important;}.sup-main{margin-left:0!important;}.sup-hamburger{display:flex;}.sup-crumb{display:none;}.sup-ticker{display:none;}#sup-live-map{height:220px;}}
 @media(max-width:600px){.sup-stats{grid-template-columns:1fr 1fr;gap:10px;}.sup-content{padding:16px;}.sup-topbar{padding:0 14px;}.sup-stat-val{font-size:22px;}.sup-metrics-col{flex-direction:column;}.sup-metrics-col>*{flex:1 1 100%;}#sup-live-map{height:200px;}}
 `
@@ -181,6 +181,7 @@ export default function SupervisorDashboard() {
   const [alertStats,  setAlertStats]  = useState(null)
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState('')
+  const [dashData, setDashData] = useState({})
 
   const mapRef    = useRef(null)
   const markerRef = useRef(null)
@@ -193,23 +194,25 @@ export default function SupervisorDashboard() {
   const userName     = displayName(user)
   const userInitials = initials(userName)
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [j, a, s] = await Promise.all([
-        api.get('/jobs/'),
-        api.get('/alerts/?is_resolved=false'),
-        api.get('/alerts/stats/'),
-      ])
-      if (!isMounted.current) return
-      setJobs(j.data || [])
-      setAlerts(a.data?.results || [])
-      setAlertStats(s.data)
-    } catch {
-      if (isMounted.current) setError('Failed to load data. Check connection.')
-    } finally {
-      if (isMounted.current) setLoading(false)
-    }
-  }, [])
+ const fetchData = useCallback(async () => {
+  try {
+    const [j, a, s, dash] = await Promise.all([
+      api.get('/jobs/'),
+      api.get('/alerts/?is_resolved=false'),
+      api.get('/alerts/stats/'),
+      api.get('/supervisor/dashboard/').catch(() => ({ data: {} })),
+    ])
+    if (!isMounted.current) return
+    setJobs(j.data || [])
+    setAlerts(a.data?.results || [])
+    setAlertStats(s.data)
+    setDashData(dash.data || {})
+  } catch {
+    if (isMounted.current) setError('Failed to load data. Check connection.')
+  } finally {
+    if (isMounted.current) setLoading(false)
+  }
+}, [])
 
   const resetTimer = useCallback(() => {
     clearInterval(intervalRef.current)
@@ -398,35 +401,71 @@ export default function SupervisorDashboard() {
               <div className="sup-loading"><div className="sup-spinner"/>Loading team data…</div>
             ) : (
               <>
-                <div className="sup-stats">
-                  <div className="sup-stat">
-                    <div className="sup-stat-label">Active Jobs</div>
-                    <div className={`sup-stat-val${activeJobs>0?' green':''}`}>{activeJobs}</div>
-                    <div className="sup-stat-sub">In progress now</div>
-                  </div>
-                  <div className="sup-stat">
-                    <div className="sup-stat-label">Unresolved Alerts</div>
-                    <div className={`sup-stat-val${alertStats?.critical>0?' red':''}${alerts.length>0&&!alertStats?.critical?' amber':''}`}>
-                      {alertStats?.unresolved_total||0}
-                    </div>
-                    {alertStats?.critical>0
-                      ? <span className="sup-stat-chip danger">{alertStats.critical} Critical</span>
-                      : <span className="sup-stat-chip">All Clear ✓</span>
-                    }
-                  </div>
-                  <div className="sup-stat">
-                    <div className="sup-stat-label">Scheduled</div>
-                    <div className="sup-stat-val">{scheduledJobs}</div>
-                    <div className="sup-stat-sub">Pending start</div>
-                  </div>
-                  <div className="sup-stat">
-                    <div className="sup-stat-label">Completed Today</div>
-                    <div className="sup-stat-val green">{completedJobs}</div>
-                    <div className="sup-stat-sub">
-                      {jobs.length>0?`${Math.round((completedJobs/jobs.length)*100)}% completion`:'No jobs yet'}
-                    </div>
-                  </div>
-                </div>
+                <div className="sup-stats" style={{gridTemplateColumns:'repeat(6,1fr)'}}>
+
+  {/* Active Jobs */}
+  <div className="sup-stat">
+    <div className="sup-stat-label">Active Jobs</div>
+    <div className={`sup-stat-val${activeJobs>0?' green':''}`}>{activeJobs}</div>
+    <div className="sup-stat-sub">In progress now</div>
+  </div>
+
+  {/* Unresolved Alerts — FIXED condition */}
+  <div className="sup-stat">
+    <div className="sup-stat-label">Unresolved Alerts</div>
+    <div className={`sup-stat-val${
+      alertStats?.critical > 0 ? ' red' :
+      alerts.length > 0 ? ' amber' : ''
+    }`}>
+      {alertStats?.unresolved_total || 0}
+    </div>
+    {alertStats?.critical > 0
+      ? <span className="sup-stat-chip danger">{alertStats.critical} Critical</span>
+      : alerts.length > 0
+      ? <span className="sup-stat-chip warn">{alerts.length} Open</span>
+      : <span className="sup-stat-chip">All Clear ✓</span>
+    }
+  </div>
+
+  {/* Scheduled */}
+  <div className="sup-stat">
+    <div className="sup-stat-label">Scheduled</div>
+    <div className="sup-stat-val">{scheduledJobs}</div>
+    <div className="sup-stat-sub">Pending start</div>
+  </div>
+
+  {/* Completed Today */}
+  <div className="sup-stat">
+    <div className="sup-stat-label">Completed Today</div>
+    <div className="sup-stat-val green">{completedJobs}</div>
+    <div className="sup-stat-sub">
+      {jobs.length > 0
+        ? `${Math.round((completedJobs/jobs.length)*100)}% completion`
+        : 'No jobs yet'}
+    </div>
+  </div>
+
+  {/* Active Technicians — NEW */}
+  <div className="sup-stat">
+    <div className="sup-stat-label">Active Technicians</div>
+    <div className="sup-stat-val green">
+      {dashData.active_technicians || techGroups.length}
+    </div>
+    <div className="sup-stat-sub">
+      {techGroups.filter(([,d]) => d.active > 0).length} on jobs now
+    </div>
+  </div>
+
+  {/* Observations Recorded — NEW */}
+  <div className="sup-stat">
+    <div className="sup-stat-label">Observations</div>
+    <div className="sup-stat-val">
+      {dashData.total_observations ?? 0}
+    </div>
+    <div className="sup-stat-sub">Total recorded</div>
+  </div>
+
+</div>
 
                 <div className="sup-row">
                   <div className="sup-card">

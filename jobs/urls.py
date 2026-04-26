@@ -37,7 +37,7 @@ urlpatterns = [
          views.JobsByTechnicianView.as_view(),
          name='jobs-by-technician'),
 
-    path('supervisor/dashboard/', views.supervisor_dashboard_api, name='supervisor_api'), 
+     path('supervisor/dashboard/', views.supervisor_dashboard_api, name='supervisor_api'), 
 
-    path('api/technician-dashboard/', views.technician_dashboard_api, name='tech_api'),    
+     path('technician/dashboard/', views.technician_dashboard_api, name='technician-dashboard'),   
 ]

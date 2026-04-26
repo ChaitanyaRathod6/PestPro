@@ -127,7 +127,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'   
+
 
 USE_I18N = True
 
@@ -168,3 +169,6 @@ REST_FRAMEWORK = {
 # Redirect after browsable API login
 LOGIN_REDIRECT_URL = '/api/jobs/'
 LOGIN_URL = '/api-auth/login/'
+
+TIME_ZONE = 'Asia/Kolkata'   
+USE_TZ = True
