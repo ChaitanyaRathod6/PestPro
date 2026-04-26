@@ -8,6 +8,7 @@ import CustomerDashboard from './pages/customer/customer'
 import TechnicianDashboard from './pages/technician/technician'
 import SupervisorDashboard from './pages/supervisor/supervisor'
 import CustomerLogin from './pages/auth/CustomerLogin'
+import JobDetailPage from './pages/technician/JobDetailPage'
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
 
           {/* Technician dashboard */}
           <Route path="/technician" element={<ProtectedRoute allowedRoles={["technician"]}><TechnicianDashboard/></ProtectedRoute>} />
+          <Route path="/technician/jobs/:id" element={<JobDetailPage />} />
 
           {/* Customer dashboard */}
           <Route path="/customer" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard/></ProtectedRoute>} />

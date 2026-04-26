@@ -1776,7 +1776,12 @@ const equipGoodCount = equip.filter(e => e.pct >= 60).length
                       : job.title || 'Service Job'
 
                     return (
-                      <div className="td-job-card" key={job.id || i}>
+                      <div
+  className="td-job-card"
+  key={job.id || i}
+  onClick={() => navigate(`/technician/jobs/${job.id}`)}
+  style={{ cursor: 'pointer' }}
+>
                         <div className="td-job-num">{i + 1}</div>
 
                         <div className="td-job-info">
