@@ -10,6 +10,7 @@ import SupervisorDashboard from './pages/supervisor/supervisor'
 import CustomerLogin from './pages/auth/CustomerLogin'
 import JobDetailPage from './pages/technician/JobDetailPage'
 import MyJobsPage from './pages/technician/MyJobsPage'
+import AdminJobsPage from './pages/admin/AdminJobsPage'
 
 function App() {
   return (
@@ -23,7 +24,32 @@ function App() {
           <Route path="/signup"  element={<SignupPage />} />
 
           {/* Admin dashboard */}
-          <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard/></ProtectedRoute>} />
+          <Route
+  path="/dashboard"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminDashboard />
+    </ProtectedRoute>
+  }
+/>
+          {/* Admin Jobs */}
+<Route
+  path="/dashboard/jobs"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminJobsPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/admin/jobs/:id"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <JobDetailPage />
+    </ProtectedRoute>
+  }
+/>
 
           {/* Supervisor dashboard */}
           <Route path="/supervisor" element={<ProtectedRoute allowedRoles={["supervisor"]}><SupervisorDashboard/></ProtectedRoute>} />
