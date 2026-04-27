@@ -28,8 +28,10 @@ today = timezone.localdate()
 
 class IsTechnician(IsAuthenticated):
     def has_permission(self, request, view):
-        return super().has_permission(request, view) and \
-               request.user.role == 'technician'
+        return (
+            super().has_permission(request, view) and
+            request.user.role == 'technician'
+        )
 
 
 # =============================================================================
@@ -477,3 +479,22 @@ def technician_dashboard_api(request):
             'equip_total': len(equip_stats),
         }
     })
+
+
+class JobSignatureView(APIView):
+    """Save technician/customer signature on a job."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            job = ServiceJob.objects.get(pk=pk)
+        except ServiceJob.DoesNotExist:
+            return Response({'error': 'Job not found.'}, status=404)
+
+        signature = request.data.get('signed_by')
+        if not signature:
+            return Response({'error': 'Signature data is required.'}, status=400)
+
+        job.signed_by = signature
+        job.save()
+        return Response({'message': 'Signature saved successfully.'})

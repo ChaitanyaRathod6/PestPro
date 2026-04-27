@@ -39,5 +39,7 @@ urlpatterns = [
 
      path('supervisor/dashboard/', views.supervisor_dashboard_api, name='supervisor_api'), 
 
-     path('technician/dashboard/', views.technician_dashboard_api, name='technician-dashboard'),   
+     path('technician/dashboard/', views.technician_dashboard_api, name='technician-dashboard'),  
+
+     path('jobs/<int:pk>/signature/', views.JobSignatureView.as_view(), name='job-signature'),
 ]

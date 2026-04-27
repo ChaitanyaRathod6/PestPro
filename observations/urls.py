@@ -12,6 +12,11 @@ urlpatterns = [
          views.ObservationSummaryView.as_view(),
          name='observation-summary'),
 
+    # ─── Photo Upload for a specific observation ────────────────────
+    path('jobs/<int:job_id>/observations/<int:obs_id>/upload_photo/',
+         views.ObservationPhotoUploadView.as_view(),
+         name='observation-photo-upload'),
+
     # ─── Single Observation ─────────────────────────────────────────
     path('observations/<int:pk>/',
          views.ObservationDetailView.as_view(),
@@ -42,3 +47,4 @@ urlpatterns = [
          views.GeneralObservationListView.as_view(),
          name='general-observations'),
 ]
+

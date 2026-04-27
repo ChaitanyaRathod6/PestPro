@@ -1520,7 +1520,17 @@ const equipGoodCount = equip.filter(e => e.pct >= 60).length
               <div
                 key={n.id}
                 className={`td-sb-item${active === n.id ? ' active' : ''}`}
-                onClick={() => { setActive(n.id); setSidebarOpen(false) }}
+                onClick={() => {
+  setActive(n.id)
+  setSidebarOpen(false)
+
+  if (n.id === 'dashboard') navigate('/technician')
+  if (n.id === 'jobs') navigate('/technician/jobs')   // ✅ THIS IS YOUR MY JOBS PAGE
+  if (n.id === 'route') navigate('/technician')       // adjust if you have route page
+  if (n.id === 'perf') navigate('/technician')        // optional
+  if (n.id === 'customers') navigate('/technician')   // optional
+  if (n.id === 'settings') navigate('/technician')    // optional
+}}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d={n.d}/>

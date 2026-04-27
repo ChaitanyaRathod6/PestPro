@@ -1,6 +1,5 @@
 from django.shortcuts import render
 
-# Create your views here.
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -47,7 +46,6 @@ class ObservationListCreateView(APIView):
     """
     GET  — List all observations for a job
     POST — Record a new observation (UC-06, UC-07, UC-08)
-
     Only the assigned technician can record observations.
     Admin and Supervisor can view all observations.
     """
@@ -58,7 +56,6 @@ class ObservationListCreateView(APIView):
         return [IsAuthenticated()]
 
     def get(self, request, job_id):
-        # Verify job exists
         try:
             job = ServiceJob.objects.get(pk=job_id)
         except ServiceJob.DoesNotExist:
@@ -67,7 +64,6 @@ class ObservationListCreateView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Technician can only view observations for their own jobs
         if request.user.role == 'technician' and \
                 job.assigned_technician != request.user:
             return Response(
@@ -76,7 +72,7 @@ class ObservationListCreateView(APIView):
             )
 
         observations = ServiceObservation.objects.filter(job=job)
-        serializer   = ServiceObservationSerializer(
+        serializer = ServiceObservationSerializer(
             observations, many=True,
             context={'request': request}
         )
@@ -87,7 +83,8 @@ class ObservationListCreateView(APIView):
         })
 
     def post(self, request, job_id):
-        # Verify job exists
+        import json
+
         try:
             job = ServiceJob.objects.get(pk=job_id)
         except ServiceJob.DoesNotExist:
@@ -96,23 +93,115 @@ class ObservationListCreateView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Only assigned technician can record observations
         if job.assigned_technician != request.user:
             return Response(
                 {'error': 'You are not assigned to this job.'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Job must be in progress (API-02 test case)
         if job.status not in ['in_progress', 'observations_recorded']:
             return Response(
                 {'error': 'Job is not in progress.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Inject job into request data
-        data = request.data.copy()
+        # ✅ FIX — flatten QueryDict lists into plain values
+        import json
+
+        raw = request.data
+        data = {}
+
+        for key in raw:
+            val = raw.getlist(key) if hasattr(raw, 'getlist') else [raw[key]]
+    # If only one value in list, unwrap it
+            data[key] = val[0] if len(val) == 1 else val
+
         data['job'] = job_id
+
+# Parse any nested detail JSON strings
+        detail_keys = [
+            'rodent_detail', 'flying_insect_detail', 'cockroach_detail',
+            'termite_detail', 'mosquito_detail', 'general_detail'
+        ]
+        for key in detail_keys:
+             if key in data and isinstance(data[key], str):
+                try:
+                    data[key] = json.loads(data[key])
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+# Inject photo into detail dict
+        photo = request.FILES.get('photo_evidence')
+        if photo:
+            category = data.get('observation_category', '')
+            detail_key_map = {
+                'rodent':        'rodent_detail',
+                'flying_insect': 'flying_insect_detail',
+                'cockroach':     'cockroach_detail',
+                'termite':       'termite_detail',
+                'mosquito':      'mosquito_detail',
+                'general':       'general_detail',
+            }
+        detail_key = detail_key_map.get(category)
+        if detail_key and isinstance(data.get(detail_key), dict):
+         data[detail_key]['photo_evidence'] = photo
+
+        # FIX 1 — parse nested detail JSON strings from FormData
+        detail_keys = [
+            'rodent_detail', 'flying_insect_detail', 'cockroach_detail',
+            'termite_detail', 'mosquito_detail', 'general_detail'
+        ]
+        for key in detail_keys:
+            if key in data and isinstance(data[key], str):
+                try:
+                    data[key] = json.loads(data[key])
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+        # FIX 2 — inject photo file into the correct detail dict
+        photo = request.FILES.get('photo_evidence')
+        if photo:
+            category = data.get('observation_category', '')
+            detail_key_map = {
+                'rodent':        'rodent_detail',
+                'flying_insect': 'flying_insect_detail',
+                'cockroach':     'cockroach_detail',
+                'termite':       'termite_detail',
+                'mosquito':      'mosquito_detail',
+                'general':       'general_detail',
+            }
+            detail_key = detail_key_map.get(category)
+            if detail_key and isinstance(data.get(detail_key), dict):
+                data[detail_key]['photo_evidence'] = photo
+
+        # Map category aliases from frontend
+        category_map = {
+            'rodent':        'rodent',
+            'flying_insect': 'flying_insect',
+            'flying insect': 'flying_insect',
+            'cockroach':     'cockroach',
+            'termite':       'termite',
+            'mosquito':      'mosquito',
+            'general':       'general',
+        }
+        if 'observation_category' not in data or not data['observation_category']:
+            for cat in ['rodent', 'flying_insect', 'cockroach', 'termite', 'mosquito', 'general']:
+                if f'{cat}_detail' in data or cat in str(data).lower():
+                    data['observation_category'] = cat
+                    break
+        else:
+            data['observation_category'] = category_map.get(
+                data['observation_category'].lower().replace(' ', '_'),
+                data['observation_category']
+            )
+
+
+        print("=" * 60)
+        print("DEBUG FINAL DATA:", dict(data))
+        print("DEBUG rodent_detail:", data.get('rodent_detail'))
+        print("DEBUG cockroach_detail:", data.get('cockroach_detail'))
+        print("DEBUG category:", data.get('observation_category'))
+        print("=" * 60)    
 
         serializer = ServiceObservationSerializer(
             data=data,
@@ -120,9 +209,6 @@ class ObservationListCreateView(APIView):
         )
         if serializer.is_valid():
             observation = serializer.save()
-
-            
-
             return Response(
                 ServiceObservationSerializer(
                     observation,
@@ -177,12 +263,10 @@ class RodentObservationListView(APIView):
     """
     List all rodent observations across all jobs.
     Admin and Supervisor only.
-    Used for SmartAlertEngine rule R-01 dashboard view.
     """
     permission_classes = [IsAdminOrSupervisor]
 
     def get(self, request):
-        # Filter by job if provided
         job_id = request.query_params.get('job_id')
         if job_id:
             observations = RodentObservation.objects.filter(
@@ -191,7 +275,6 @@ class RodentObservationListView(APIView):
         else:
             observations = RodentObservation.objects.all()
 
-        # Filter by activity level if provided
         activity = request.query_params.get('activity_level')
         if activity:
             observations = observations.filter(activity_level=activity)
@@ -210,7 +293,6 @@ class FlyingInsectObservationListView(APIView):
     """
     List all flying insect observations.
     Admin and Supervisor only.
-    Used for flycatcher machine trend charts on dashboard (UC-13).
     """
     permission_classes = [IsAdminOrSupervisor]
 
@@ -223,7 +305,6 @@ class FlyingInsectObservationListView(APIView):
         else:
             observations = FlyingInsectObservation.objects.all()
 
-        # Filter non-functional machines
         non_functional = request.query_params.get('non_functional')
         if non_functional == 'true':
             observations = observations.filter(machine_functional=False)
@@ -280,7 +361,6 @@ class TermiteObservationListView(APIView):
         else:
             observations = TermiteObservation.objects.all()
 
-        # Filter by damage severity if provided
         severity = request.query_params.get('damage_severity')
         if severity:
             observations = observations.filter(damage_severity=severity)
@@ -337,7 +417,6 @@ class GeneralObservationListView(APIView):
         else:
             observations = GeneralObservation.objects.all()
 
-        # Filter by pest type if provided
         pest_type = request.query_params.get('pest_type')
         if pest_type:
             observations = observations.filter(
@@ -357,8 +436,7 @@ class GeneralObservationListView(APIView):
 class ObservationSummaryView(APIView):
     """
     Summary of all observations for a job.
-    Used in job completion flow (UC-09) — technician reviews
-    before signing off.
+    Used in job completion flow (UC-09).
     """
     permission_classes = [IsAuthenticated]
 
@@ -371,7 +449,6 @@ class ObservationSummaryView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Technician can only view summary for their own job
         if request.user.role == 'technician' and \
                 job.assigned_technician != request.user:
             return Response(
@@ -381,7 +458,6 @@ class ObservationSummaryView(APIView):
 
         observations = ServiceObservation.objects.filter(job=job)
 
-        # Build summary by category
         summary = {}
         for category in ['rodent', 'flying_insect', 'cockroach',
                          'termite', 'mosquito', 'general']:
@@ -392,11 +468,48 @@ class ObservationSummaryView(APIView):
                 summary[category] = count
 
         return Response({
-            'job_id':              job_id,
-            'job_status':          job.status,
-            'total_observations':  observations.count(),
-            'by_category':         summary,
-            'customer':            job.customer.name,
-            'site_address':        job.site_address,
-            'service_type':        job.service_type,
+            'job_id':             job_id,
+            'job_status':         job.status,
+            'total_observations': observations.count(),
+            'by_category':        summary,
+            'customer':           job.customer.name,
+            'site_address':       job.site_address,
+            'service_type':       job.service_type,
         })
+    
+
+class ObservationPhotoUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, job_id, obs_id):
+        try:
+            obs = ServiceObservation.objects.get(
+                id=obs_id,
+                job_id=job_id,
+                recorded_by=request.user
+            )
+        except ServiceObservation.DoesNotExist:
+            return Response({'error': 'Observation not found.'}, status=404)
+
+        photo = request.FILES.get('photo_evidence')
+        if not photo:
+            return Response({'error': 'No photo provided.'}, status=400)
+
+        child_map = {
+            'rodent':        'rodent_obs',
+            'flying_insect': 'flyinginsect_obs',
+            'cockroach':     'cockroach_obs',
+            'termite':       'termite_obs',
+            'mosquito':      'mosquito_obs',
+            'general':       'general_obs',
+        }
+        related = child_map.get(obs.observation_category)
+        if related:
+            try:
+                child = getattr(obs, related)
+                child.photo_evidence = photo
+                child.save()
+            except Exception as e:
+                return Response({'error': str(e)}, status=400)
+
+        return Response({'status': 'photo uploaded'})    

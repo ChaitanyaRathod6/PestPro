@@ -9,6 +9,7 @@ import TechnicianDashboard from './pages/technician/technician'
 import SupervisorDashboard from './pages/supervisor/supervisor'
 import CustomerLogin from './pages/auth/CustomerLogin'
 import JobDetailPage from './pages/technician/JobDetailPage'
+import MyJobsPage from './pages/technician/MyJobsPage'
 
 function App() {
   return (
@@ -29,7 +30,23 @@ function App() {
 
           {/* Technician dashboard */}
           <Route path="/technician" element={<ProtectedRoute allowedRoles={["technician"]}><TechnicianDashboard/></ProtectedRoute>} />
-          <Route path="/technician/jobs/:id" element={<JobDetailPage />} />
+          <Route
+  path="/technician/jobs"
+  element={
+    <ProtectedRoute allowedRoles={["technician"]}>
+      <MyJobsPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/technician/jobs/:id"
+  element={
+    <ProtectedRoute allowedRoles={["technician"]}>
+      <JobDetailPage />
+    </ProtectedRoute>
+  }
+/>
 
           {/* Customer dashboard */}
           <Route path="/customer" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard/></ProtectedRoute>} />
