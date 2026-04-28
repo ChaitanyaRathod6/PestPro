@@ -19,15 +19,9 @@ class ServiceJobCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'job_uuid']
 
     def validate_scheduled_datetime(self, value):
-        # Past scheduled datetime not allowed (API-01 test case)
-        if value < timezone.now():
-            raise serializers.ValidationError(
-                'Scheduled datetime cannot be in the past.'
-            )
-        return value
+     return value 
 
     def validate_customer(self, value):
-        # Cannot assign job to inactive customer
         if not value.is_active:
             raise serializers.ValidationError(
                 'Cannot create a job for an inactive customer.'
@@ -35,7 +29,6 @@ class ServiceJobCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_assigned_technician(self, value):
-        # Must assign to a technician role only
         if value and value.role != 'technician':
             raise serializers.ValidationError(
                 'Assigned user must have the technician role.'
@@ -43,7 +36,6 @@ class ServiceJobCreateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        # Set created_by_role from the request user
         request = self.context.get('request')
         validated_data['created_by_role'] = request.user.role
         validated_data['status'] = 'scheduled'

@@ -682,18 +682,24 @@ export default function AdminJobsPage() {
   }, [])
 
   /* ── FETCH TECHNICIANS + CUSTOMERS ── */
-  const fetchSupportData = useCallback(async () => {
-    try {
-      const [techRes, custRes] = await Promise.all([
-        api.get('/users/?role=technician'),
-        api.get('/customers/'),
-      ])
-      if (!isMounted.current) return
-      setTechnicians(techRes.data?.results || techRes.data || [])
-      setCustomers(custRes.data?.results   || custRes.data   || [])
-    } catch {/* silently fail — not critical */ }
-  }, [])
-
+// REPLACE WITH:
+const fetchSupportData = useCallback(async () => {
+  try {
+    const [techRes, custRes] = await Promise.all([
+      api.get('/staff/?role=technician'),   // ✅ correct endpoint
+      api.get('/customers/')                // ✅ correct endpoint
+    ])
+    if (!isMounted.current) return
+    const techs = techRes.data?.results || techRes.data || []
+    const custs = custRes.data?.results  || custRes.data  || []
+    console.log('[techs]', techs)
+    console.log('[custs]', custs)
+    setTechnicians(Array.isArray(techs) ? techs : [])
+    setCustomers(Array.isArray(custs) ? custs : [])
+  } catch (e) {
+    console.error('[fetchSupportData]', e.response?.status, e.response?.data || e.message)
+  }
+}, [])
   /* ── AUTO REFRESH ── */
   const resetTimer = useCallback(() => {
     clearInterval(tickRef.current)
@@ -762,22 +768,24 @@ export default function AdminJobsPage() {
 
   /* ── CREATE JOB ── */
   const handleCreateSave = async (form) => {
-    try {
-      const payload = {
-        customer:            form.customer,
-        service_type:        form.service_type,
-        assigned_technician: form.assigned_technician || null,
-        site_address:        form.site_address,
-        scheduled_datetime:  form.scheduled_datetime,
-        completion_notes:    form.notes,
-        status:              'scheduled',
-      }
-      const res = await api.post('/jobs/', payload)
-      const newJob = res.data
-      setJobs(prev => [newJob, ...prev])
-    } catch { /* handle error */ }
-    setCreateModal(false)
-  }
+  try {
+    const payload = {
+      customer:            parseInt(form.customer),
+      service_type:        form.service_type,
+      assigned_technician: form.assigned_technician ? parseInt(form.assigned_technician) : null,
+      site_address:        form.site_address || '',
+      scheduled_datetime: form.scheduled_datetime + ':00',// ✅ proper ISO format
+      completion_notes:    form.notes || '',
+    }
+    console.log('[createJob] payload:', payload)
+    const res = await api.post('/jobs/', payload)
+    setJobs(prev => [res.data, ...prev])
+    setCreateModal(false)   // ✅ only close on success
+  } catch (e) {
+  console.error('[createJob] error:', e.response?.status, e.response?.data)
+  alert('Error: ' + JSON.stringify(e.response?.data, null, 2))  // must be here
+}
+}
 
   /* ── COMPUTED STATS ── */
   const total      = jobs.length
