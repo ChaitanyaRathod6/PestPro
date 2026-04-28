@@ -11,6 +11,10 @@ import CustomerLogin from './pages/auth/CustomerLogin'
 import JobDetailPage from './pages/technician/JobDetailPage'
 import MyJobsPage from './pages/technician/MyJobsPage'
 import AdminJobsPage from './pages/admin/AdminJobsPage'
+import AdminJobDetailPage from './pages/admin/AdminJobDetailPage'
+import AdminCustomersPage from './pages/admin/AdminCustomersPage'
+
+
 
 function App() {
   return (
@@ -47,6 +51,20 @@ function App() {
   element={
     <ProtectedRoute allowedRoles={["admin"]}>
       <JobDetailPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/admin/jobs/:id"
+  element={<AdminJobDetailPage />}
+/>
+
+<Route
+  path="/dashboard/customers"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminCustomersPage />
     </ProtectedRoute>
   }
 />

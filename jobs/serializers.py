@@ -57,7 +57,9 @@ class ServiceJobListSerializer(serializers.ModelSerializer):
         model = ServiceJob
         fields = [
             'id', 'job_uuid', 'customer_name', 'technician_name',
+            'assigned_technician',   # ✅ ADD THIS
             'service_type', 'status', 'scheduled_datetime',
+            'site_address',          # ✅ ADD THIS TOO
             'started_at', 'completed_at', 'is_report_sent'
         ]
 

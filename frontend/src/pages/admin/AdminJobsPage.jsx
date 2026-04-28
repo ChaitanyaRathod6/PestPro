@@ -786,13 +786,14 @@ const fetchSupportData = useCallback(async () => {
   alert('Error: ' + JSON.stringify(e.response?.data, null, 2))  // must be here
 }
 }
+console.log('[job sample]', jobs[0])
 
   /* ── COMPUTED STATS ── */
   const total      = jobs.length
   const completed  = jobs.filter(j => ['completed', 'report_sent'].includes(j.status)).length
   const inProgress = jobs.filter(j => j.status === 'in_progress').length
   const pending    = jobs.filter(j => ['scheduled'].includes(j.status)).length
-  const unassigned = jobs.filter(j => !j.assigned_technician && !j.technician_id).length
+  const unassigned = jobs.filter(j => !j.assigned_technician).length
 
   /* ── TAB COUNTS ── */
   const tabCount = (key) => {
@@ -816,10 +817,9 @@ const fetchSupportData = useCallback(async () => {
   const filtered = jobs
     .filter(j => activeTab === 'all' || j.status === activeTab)
     .filter(j => {
-      if (!filterTech) return true
-      const id = j.assigned_technician || j.technician_id
-      return String(id) === filterTech
-    })
+  if (!filterTech) return true
+  return String(j.assigned_technician) === filterTech
+})
     .filter(j => {
       if (!search.trim()) return true
       const q = search.toLowerCase()
