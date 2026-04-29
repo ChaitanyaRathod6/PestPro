@@ -178,6 +178,50 @@ class StaffListView(generics.ListAPIView):
         if role:
             queryset = queryset.filter(role=role)
         return queryset
+    
+
+
+class StaffDetailView(APIView):
+    """
+    Retrieve, partial-update (edit/toggle active) a staff member.
+    Admin only.
+    """
+    permission_classes = [IsAdmin]
+
+    def get_object(self, pk):
+        try:
+            return User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        user = self.get_object(pk)
+        if not user:
+            return Response(
+                {'error': 'Staff member not found.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        return Response(UserProfileSerializer(user).data)
+
+    def patch(self, request, pk):
+        user = self.get_object(pk)
+        if not user:
+            return Response(
+                {'error': 'Staff member not found.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = UserUpdateSerializer(
+            user,
+            data=request.data,
+            partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(UserProfileSerializer(user).data)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )    
 
 
 # =============================================================================
@@ -410,3 +454,6 @@ class StaffRegisterView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )    
+    
+
+    

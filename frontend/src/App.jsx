@@ -14,6 +14,8 @@ import AdminJobsPage from './pages/admin/AdminJobsPage'
 import AdminJobDetailPage from './pages/admin/AdminJobDetailPage'
 import AdminCustomersPage from './pages/admin/AdminCustomersPage'
 import AdminCustomerDetailPage from './pages/admin/Admincustomersdetailpage'
+import AdminTechniciansPage from './pages/admin/AdminTechinciansPage'
+import AdminTechnicianDetailPage from './pages/admin/AdminStaffDetailPage'
 
 
 
@@ -84,6 +86,15 @@ function App() {
   }
 />
 
+<Route
+  path="/dashboard/technicians/:id"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminTechnicianDetailPage />
+    </ProtectedRoute>
+  }
+/>
+
           {/* Supervisor dashboard */}
           <Route path="/supervisor" element={<ProtectedRoute allowedRoles={["supervisor"]}><SupervisorDashboard/></ProtectedRoute>} />
 
@@ -106,6 +117,16 @@ function App() {
     </ProtectedRoute>
   }
 />
+
+<Route
+  path="/dashboard/technicians"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminTechniciansPage />
+    </ProtectedRoute>
+  }
+/>
+      
 
           {/* Customer dashboard */}
           <Route path="/customer" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard/></ProtectedRoute>} />

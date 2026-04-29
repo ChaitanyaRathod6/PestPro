@@ -22,6 +22,10 @@ urlpatterns = [
          views.StaffListView.as_view(),
          name='staff-list'),
 
+     path('staff/<int:pk>/',            # ← ADD THIS
+         views.StaffDetailView.as_view(),
+         name='staff-detail'),   
+
     path('staff/register/',
          views.StaffRegisterView.as_view(),
          name='staff-register'),
