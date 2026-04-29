@@ -13,6 +13,7 @@ import MyJobsPage from './pages/technician/MyJobsPage'
 import AdminJobsPage from './pages/admin/AdminJobsPage'
 import AdminJobDetailPage from './pages/admin/AdminJobDetailPage'
 import AdminCustomersPage from './pages/admin/AdminCustomersPage'
+import AdminCustomerDetailPage from './pages/admin/Admincustomersdetailpage'
 
 
 
@@ -46,25 +47,39 @@ function App() {
   }
 />
 
-<Route
+{/* <Route
   path="/admin/jobs/:id"
   element={
     <ProtectedRoute allowedRoles={["admin"]}>
       <JobDetailPage />
     </ProtectedRoute>
   }
+/> */}
+<Route
+  path="/dashboard/jobs/:id"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminJobDetailPage />
+    </ProtectedRoute>
+  }
 />
 
-<Route
-  path="/admin/jobs/:id"
-  element={<AdminJobDetailPage />}
-/>
+
 
 <Route
   path="/dashboard/customers"
   element={
     <ProtectedRoute allowedRoles={["admin"]}>
       <AdminCustomersPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/dashboard/customers/:id"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminCustomerDetailPage />
     </ProtectedRoute>
   }
 />

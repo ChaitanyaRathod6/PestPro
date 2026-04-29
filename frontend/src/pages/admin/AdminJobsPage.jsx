@@ -1071,7 +1071,7 @@ console.log('[job sample]', jobs[0])
                       <div
                         key={job.id || i}
                         className="aj-job-card"
-                        onClick={() => navigate(`/admin/jobs/${job.id}`)}
+                        onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
                       >
                         <div className="aj-job-num">{i + 1}</div>
 
@@ -1139,7 +1139,7 @@ console.log('[job sample]', jobs[0])
                           </button>
                           <button
                             className="aj-btn-view"
-                            onClick={() => navigate(`/admin/jobs/${job.id}`)}
+                            onClick={() => navigate(`/dashboard/jobs/${job.id}`)}
                           >
                             View
                           </button>

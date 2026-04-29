@@ -859,7 +859,12 @@ export default function AdminCustomersPage() {
                   </div>
                 ) : (
                   filtered.map(c => (
-                    <div key={c.id} className="ac-card">
+                    <div
+  key={c.id}
+  className="ac-card"
+  onClick={() => navigate(`/dashboard/customers/${c.id}`)}
+  style={{ cursor: 'pointer' }}
+>
                       {/* Avatar */}
                       <div className={`ac-avatar${c.is_active ? '' : ' inactive'}`}>
                         {custInitials(c.name)}
@@ -911,16 +916,19 @@ export default function AdminCustomersPage() {
                         </div>
                       </div>
 
+                     
                       {/* Actions */}
-                      <div className="ac-actions">
-                        <button className="ac-btn-edit" onClick={() => setEditModal(c)}>Edit</button>
-                        <button
-                          className={`ac-btn-toggle ${c.is_active ? 'deactivate' : 'activate'}`}
-                          onClick={() => setToggleModal(c)}
-                        >
-                          {c.is_active ? 'Deactivate' : 'Activate'}
-                        </button>
-                      </div>
+<div className="ac-actions" onClick={e => e.stopPropagation()}>
+  <button className="ac-btn-edit" onClick={() => setEditModal(c)}>
+    Edit
+  </button>
+  <button
+    className={`ac-btn-toggle ${c.is_active ? 'deactivate' : 'activate'}`}
+    onClick={() => setToggleModal(c)}
+  >
+    {c.is_active ? 'Deactivate' : 'Activate'}
+  </button>
+</div>
                     </div>
                   ))
                 )}
