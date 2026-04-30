@@ -56,4 +56,7 @@ urlpatterns = [
     path('auth/customer/register/',
          views.CustomerPublicRegisterView.as_view(),
          name='customer-register-public'),
+
+
+    path('auth/change-password/', views.change_password, name='change-password'),     
 ]

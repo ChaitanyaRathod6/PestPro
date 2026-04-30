@@ -618,22 +618,15 @@ export default function AdminTechniciansPage() {
   const handleAdd = async (form) => {
   const payload = {
     ...form,
-    password: "ChangeMe@123",
-    password2: "ChangeMe@123"   // ✅ add this
+    password: 'ChangeMe@123',
+    password2: 'ChangeMe@123',
   }
-
-  try {
-    const res = await api.post('/staff/register/', payload)
-
-    if (isMounted.current) {
-      setAllStaff(prev => [res.data, ...prev].filter(t => !isAdmin(t)))
-      setAddModal(false)
-      showToast('Staff member added successfully.')
-      resetTimer()
-    }
-  } catch (err) {
-    console.log("FULL ERROR:", err.response)
-    console.log("DATA:", err.response?.data)
+  const res = await api.post('/staff/register/', payload)
+  if (isMounted.current) {
+    setAllStaff(prev => [res.data, ...prev].filter(t => !isAdmin(t)))
+    setAddModal(false)
+    showToast('Staff member added successfully.')
+    resetTimer()
   }
 }
 

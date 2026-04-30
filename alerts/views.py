@@ -92,14 +92,15 @@ class SmartAlertDetailView(APIView):
 
 class SmartAlertResolveView(APIView):
     """
-    Resolve a smart alert (UC-10).
+    Resolve or reopen a smart alert.
+    POST → resolve it
+    PATCH → reopen it (set is_resolved=False)
     Admin and Supervisor only.
-    RBAC-06: Technician gets 403.
-    Records resolved_by, resolved_at, and resolution_notes.
     """
     permission_classes = [IsAdminOrSupervisor]
 
-    def patch(self, request, pk):
+    def post(self, request, pk):
+        """Resolve the alert."""
         try:
             alert = SmartAlert.objects.get(pk=pk)
         except SmartAlert.DoesNotExist:
@@ -108,7 +109,6 @@ class SmartAlertResolveView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Already resolved check
         if alert.is_resolved:
             return Response(
                 {'error': 'This alert is already resolved.'},
@@ -122,14 +122,41 @@ class SmartAlertResolveView(APIView):
             context={'request': request}
         )
         if serializer.is_valid():
-            serializer.save()
-            return Response({
-                'message': 'Alert resolved successfully.',
-                'alert':   SmartAlertDetailSerializer(alert).data
-            })
+            alert = serializer.save()          # ← use returned instance, not stale `alert`
+            return Response(
+                SmartAlertDetailSerializer(alert).data,   # ← return flat object, not nested
+                status=status.HTTP_200_OK
+            )
         return Response(
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
+        )
+
+    def patch(self, request, pk):
+        """Reopen a resolved alert."""
+        try:
+            alert = SmartAlert.objects.get(pk=pk)
+        except SmartAlert.DoesNotExist:
+            return Response(
+                {'error': 'Alert not found.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not alert.is_resolved:
+            return Response(
+                {'error': 'This alert is not resolved.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        alert.is_resolved   = False
+        alert.resolved_by   = None
+        alert.resolved_at   = None
+        alert.is_read       = False
+        alert.save()
+
+        return Response(
+            SmartAlertDetailSerializer(alert).data,
+            status=status.HTTP_200_OK
         )
 
 

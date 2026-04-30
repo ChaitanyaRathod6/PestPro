@@ -373,9 +373,9 @@ export default function LoginPage() {
 >
   Password
 </label>
-                  <a href="#" className="forgot-link" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                    Forgot Password?
-                  </a>
+                  <Link to="/reset-password" className="forgot-link" style={{ fontFamily: "'DM Serif Display', serif" }}>
+  Forgot Password?
+</Link>
                 </div>
                 <div className="field-wrap" style={{ marginTop: 7 }}>
                   <span className="field-icon">

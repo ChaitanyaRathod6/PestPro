@@ -16,7 +16,9 @@ import AdminCustomersPage from './pages/admin/AdminCustomersPage'
 import AdminCustomerDetailPage from './pages/admin/Admincustomersdetailpage'
 import AdminTechniciansPage from './pages/admin/AdminTechinciansPage'
 import AdminTechnicianDetailPage from './pages/admin/AdminStaffDetailPage'
-
+import ResetPasswordPage from './pages/auth/ResetPasswordPage'
+import AdminAlertsPage from './pages/admin/AdminSmartAlerts'
+import AdminAlertDetailPage from './pages/admin/AdminSmartAlertDetailPge'
 
 
 function App() {
@@ -29,6 +31,7 @@ function App() {
           <Route path="/"        element={<Navigate to="/login" replace />} />
           <Route path="/login"   element={<LoginPage />} />
           <Route path="/signup"  element={<SignupPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Admin dashboard */}
           <Route
@@ -91,6 +94,24 @@ function App() {
   element={
     <ProtectedRoute allowedRoles={["admin"]}>
       <AdminTechnicianDetailPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route 
+  path="/dashboard/alerts"  
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminAlertsPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/dashboard/alerts/:id"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminAlertDetailPage />
     </ProtectedRoute>
   }
 />

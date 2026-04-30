@@ -69,12 +69,16 @@ export default function AdminCustomerDetailPage() {
       // Strategy 1: try query param (Django supports ?customer=ID if filtered viewset)
       let fetchedJobs = []
       try {
-        const r = await api.get(`/jobs/?customer=${id}`)
-        fetchedJobs = r.data?.results || r.data || []
-      } catch {
-        const r = await api.get('/jobs/')
-        fetchedJobs = r.data?.results || r.data || []
-      }
+  const r = await api.get(`/jobs/?customer=${id}`)
+  fetchedJobs = r.data?.results || r.data || []
+} catch {
+  try {
+    const r = await api.get('/jobs/')
+    fetchedJobs = r.data?.results || r.data || []
+  } catch {
+    fetchedJobs = []
+  }
+}
 
       if (!isMounted.current) return
 
@@ -90,7 +94,7 @@ export default function AdminCustomerDetailPage() {
       })
 
       // Use filtered if we found matches, otherwise trust the query-param result
-      setJobs(filtered.length > 0 ? filtered : fetchedJobs)
+      setJobs(filtered)
 
     } catch (e) {
       if (!silent && isMounted.current)

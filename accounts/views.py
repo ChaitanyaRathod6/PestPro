@@ -52,6 +52,7 @@ class StaffLoginView(APIView):
     Admin, Supervisor, Technician all use this endpoint.
     """
     permission_classes = [AllowAny]
+    authentication_classes = []  # Disable default authentication
 
     def post(self, request):
         username = request.data.get('username')
@@ -260,6 +261,7 @@ class CustomerPublicRegisterView(APIView):
     Uses a lightweight serializer that accepts minimal fields.
     """
     permission_classes = [AllowAny]
+    authentication_classes = []  # Disable default authentication
 
     def post(self, request):
         from .serializers import CustomerPublicRegisterSerializer
@@ -352,6 +354,7 @@ class CustomerOTPRequestView(APIView):
     Always returns generic message to prevent account enumeration (OTP-06).
     """
     permission_classes = [AllowAny]
+    authentication_classes = []  # Disable default authentication
 
     def post(self, request):
         serializer = OTPRequestSerializer(data=request.data)
@@ -410,6 +413,7 @@ class CustomerOTPVerifyView(APIView):
     Customer submits OTP → system returns session token.
     """
     permission_classes = [AllowAny]
+    authentication_classes = []  # Disable default authentication
 
     def post(self, request):
         serializer = OTPVerifySerializer(data=request.data)
@@ -453,7 +457,31 @@ class StaffRegisterView(APIView):
         return Response(
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
-        )    
-    
+        )  
+      
+from django.contrib.auth import authenticate
+from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes, authentication_classes  # ← add this line
+from rest_framework.authentication import BasicAuthentication
 
-    
+@api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def change_password(request):
+    username = request.data.get('username')
+    old_password = request.data.get('old_password')
+    new_password = request.data.get('new_password')
+
+    if not all([username, old_password, new_password]):
+        return Response({'error': 'All fields are required.'}, status=400)
+
+    user = authenticate(request, username=username, password=old_password)
+    if not user:
+        return Response({'error': 'Incorrect username or current password.'}, status=400)
+
+    if old_password == new_password:
+        return Response({'error': 'New password must be different from current password.'}, status=400)
+
+    user.set_password(new_password)
+    user.save()
+    return Response({'message': 'Password changed successfully.'}, status=200)
