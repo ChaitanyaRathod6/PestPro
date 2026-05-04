@@ -67,10 +67,6 @@ class SmartAlertListView(APIView):
 
 
 class SmartAlertDetailView(APIView):
-    """
-    View full details of a single alert (UC-10).
-    Admin and Supervisor only.
-    """
     permission_classes = [IsAdminOrSupervisor]
 
     def get_object(self, pk):
@@ -82,12 +78,19 @@ class SmartAlertDetailView(APIView):
     def get(self, request, pk):
         alert = self.get_object(pk)
         if not alert:
-            return Response(
-                {'error': 'Alert not found.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'error': 'Alert not found.'}, status=status.HTTP_404_NOT_FOUND)
         serializer = SmartAlertDetailSerializer(alert)
         return Response(serializer.data)
+
+    def patch(self, request, pk):
+        alert = self.get_object(pk)
+        if not alert:
+            return Response({'error': 'Alert not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = SmartAlertDetailSerializer(alert, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SmartAlertResolveView(APIView):

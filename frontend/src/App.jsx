@@ -19,6 +19,7 @@ import AdminTechnicianDetailPage from './pages/admin/AdminStaffDetailPage'
 import ResetPasswordPage from './pages/auth/ResetPasswordPage'
 import AdminAlertsPage from './pages/admin/AdminSmartAlerts'
 import AdminAlertDetailPage from './pages/admin/AdminSmartAlertDetailPge'
+import AdminReportsPage from './pages/admin/AdminReportsPage'
 
 
 function App() {
@@ -112,6 +113,15 @@ function App() {
   element={
     <ProtectedRoute allowedRoles={["admin"]}>
       <AdminAlertDetailPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/dashboard/reports"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminReportsPage />
     </ProtectedRoute>
   }
 />

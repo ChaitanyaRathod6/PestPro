@@ -31,11 +31,11 @@ const fmtRelative = (dt) => {
 const AUTO_REFRESH_SECS = 30
 
 const SEVERITY_CONFIG = {
-  critical: { label: 'Critical',  cls: 'critical', color: '#e74c3c', bg: '#fde8e8'  },
-  high:     { label: 'High',      cls: 'high',     color: '#e6550d', bg: '#fff0eb'  },
-  medium:   { label: 'Medium',    cls: 'medium',   color: '#e6a817', bg: '#fff8ec'  },
-  low:      { label: 'Low',       cls: 'low',      color: '#3b82f6', bg: '#eff6ff'  },
-  info:     { label: 'Info',      cls: 'info',     color: '#7a8c7a', bg: '#f0f2f0'  },
+  critical: { label: 'Critical', cls: 'critical', color: '#e74c3c', bg: '#fde8e8' },
+  high:     { label: 'High',     cls: 'high',     color: '#e6550d', bg: '#fff0eb' },
+  medium:   { label: 'Medium',   cls: 'medium',   color: '#e6a817', bg: '#fff8ec' },
+  low:      { label: 'Low',      cls: 'low',      color: '#3b82f6', bg: '#eff6ff' },
+  info:     { label: 'Info',     cls: 'info',     color: '#7a8c7a', bg: '#f0f2f0' },
 }
 
 const STATUS_CONFIG = {
@@ -47,15 +47,15 @@ const STATUS_CONFIG = {
 }
 
 const ALERT_TYPE_ICONS = {
-  overdue_job:          'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-  technician_idle:      'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-  customer_complaint:   'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-  low_inventory:        'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
-  missed_appointment:   'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-  payment_overdue:      'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-  chemical_expiry:      'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
-  route_inefficiency:   'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7',
-  default:              'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
+  overdue_job:        'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+  technician_idle:    'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+  customer_complaint: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+  low_inventory:      'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+  missed_appointment: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+  payment_overdue:    'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+  chemical_expiry:    'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
+  route_inefficiency: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7',
+  default:            'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
 }
 
 export default function AdminAlertDetailPage() {
@@ -69,11 +69,12 @@ export default function AdminAlertDetailPage() {
   const [relatedJob, setRelatedJob] = useState(null)
   const [relatedCustomer, setRelatedCustomer] = useState(null)
   const [relatedTechnician, setRelatedTechnician] = useState(null)
+  const [relatedCompany, setRelatedCompany] = useState(null)   // ← NEW: company
   const [allAlerts, setAllAlerts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [editModal, setEditModal] = useState(false)
-  const [actionModal, setActionModal] = useState(null) // 'resolve'|'dismiss'|'snooze'|'acknowledge'
+  const [actionModal, setActionModal] = useState(null)
   const [toast, setToast] = useState(null)
   const [countdown, setCountdown] = useState(AUTO_REFRESH_SECS)
   const [noteText, setNoteText] = useState('')
@@ -92,43 +93,71 @@ export default function AdminAlertDetailPage() {
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setError('')
     try {
-      // Fetch the alert
       const alertRes = await api.get(`/alerts/${id}/`)
       if (!isMounted.current) return
       const alertData = alertRes.data
       setAlert(alertData)
 
-      // Fetch related entities in parallel
       const fetches = []
 
+      // Job
       if (alertData.job || alertData.job_id) {
         const jobId = alertData.job?.id || alertData.job_id || alertData.job
         fetches.push(
-          api.get(`/jobs/${jobId}/`).then(r => { if (isMounted.current) setRelatedJob(r.data) }).catch(() => {})
+          api.get(`/jobs/${jobId}/`).then(r => { if (isMounted.current) setRelatedJob(r.data) }).catch(() => setRelatedJob(null))
         )
       } else {
         setRelatedJob(null)
       }
 
+      // Customer
       if (alertData.customer || alertData.customer_id) {
         const custId = alertData.customer?.id || alertData.customer_id || alertData.customer
         fetches.push(
-          api.get(`/customers/${custId}/`).then(r => { if (isMounted.current) setRelatedCustomer(r.data) }).catch(() => {})
+          api.get(`/customers/${custId}/`).then(r => {
+            if (!isMounted.current) return
+            setRelatedCustomer(r.data)
+            // Try to fetch company from customer's company field
+            const companyId = r.data.company?.id || r.data.company_id || r.data.company
+            if (companyId) {
+              api.get(`/companies/${companyId}/`).then(c => {
+                if (isMounted.current) setRelatedCompany(c.data)
+              }).catch(() => {})
+            } else if (r.data.company_name) {
+              // Some APIs embed the name directly
+              setRelatedCompany({ name: r.data.company_name })
+            }
+          }).catch(() => setRelatedCustomer(null))
         )
       } else {
         setRelatedCustomer(null)
       }
 
+      // Technician
       if (alertData.technician || alertData.technician_id) {
         const techId = alertData.technician?.id || alertData.technician_id || alertData.technician
         fetches.push(
-          api.get(`/technicians/${techId}/`).then(r => { if (isMounted.current) setRelatedTechnician(r.data) }).catch(() => {})
+          api.get(`/technicians/${techId}/`).then(r => { if (isMounted.current) setRelatedTechnician(r.data) }).catch(() => setRelatedTechnician(null))
         )
       } else {
         setRelatedTechnician(null)
       }
 
-      // Fetch recent alerts of same type for sidebar context
+      // Company directly on alert (e.g. alert.company or alert.company_id)
+      if (alertData.company || alertData.company_id) {
+        const compId = alertData.company?.id || alertData.company_id || alertData.company
+        if (typeof compId === 'object') {
+          setRelatedCompany(compId) // already nested object
+        } else {
+          fetches.push(
+            api.get(`/companies/${compId}/`).then(r => { if (isMounted.current) setRelatedCompany(r.data) }).catch(() => {})
+          )
+        }
+      } else if (alertData.company_name) {
+        setRelatedCompany({ name: alertData.company_name })
+      }
+
+      // Similar alerts
       fetches.push(
         api.get(`/alerts/?alert_type=${alertData.alert_type}&limit=5`).then(r => {
           if (!isMounted.current) return
@@ -138,7 +167,6 @@ export default function AdminAlertDetailPage() {
       )
 
       await Promise.all(fetches)
-
     } catch (e) {
       if (!silent && isMounted.current)
         setError(e.response?.status === 404 ? 'Alert not found.' : 'Failed to load alert details.')
@@ -166,19 +194,30 @@ export default function AdminAlertDetailPage() {
     fetchData(true).then(() => { resetTimer(); setTimeout(() => setIsSpinning(false), 550) })
   }
 
+  // ─── FIX 1: handleStatusAction — robustly patches and refreshes state ────
   const handleStatusAction = async (newStatus, extra = {}) => {
     try {
       const payload = { status: newStatus, ...extra }
-      if (newStatus === 'acknowledged' && !payload.acknowledged_at) payload.acknowledged_at = new Date().toISOString()
-      if (newStatus === 'resolved' && !payload.resolved_at) payload.resolved_at = new Date().toISOString()
+      if (newStatus === 'acknowledged' && !payload.acknowledged_at) {
+        payload.acknowledged_at = new Date().toISOString()
+      }
+      if (newStatus === 'resolved' && !payload.resolved_at) {
+        payload.resolved_at = new Date().toISOString()
+      }
       const res = await api.patch(`/alerts/${id}/`, payload)
-      setAlert(res.data)
-      setActionModal(null)
-      showToast(`Alert marked as ${fmt(newStatus)}.`)
-      resetTimer()
+      if (isMounted.current) {
+        setAlert(res.data)          // update local state immediately
+        setActionModal(null)        // close modal
+        showToast(`Alert marked as ${fmt(newStatus)}.`)
+        resetTimer()
+        // Also do a silent full fetch to sync all related data
+        fetchData(true)
+      }
     } catch (e) {
       const data = e.response?.data
-      showToast(typeof data === 'object' ? Object.values(data).flat().join(' ') : 'Failed to update alert.', 'error')
+      const msg = typeof data === 'object' ? Object.values(data).flat().join(' ') : 'Failed to update alert.'
+      showToast(msg, 'error')
+      // Don't close modal on error so user can retry
     }
   }
 
@@ -186,13 +225,14 @@ export default function AdminAlertDetailPage() {
     if (!noteText.trim()) return
     setSavingNote(true)
     try {
-      // Try a dedicated notes endpoint, fallback to patching notes field
       try {
         await api.post(`/alerts/${id}/notes/`, { content: noteText.trim() })
       } catch {
         const currentNotes = alert.notes || ''
         const timestamp = new Date().toLocaleString('en-IN')
-        await api.patch(`/alerts/${id}/`, { notes: `${currentNotes}${currentNotes ? '\n' : ''}[${timestamp}] ${noteText.trim()}` })
+        await api.patch(`/alerts/${id}/`, {
+          notes: `${currentNotes}${currentNotes ? '\n' : ''}[${timestamp}] ${noteText.trim()}`
+        })
       }
       setNoteText('')
       showToast('Note added.')
@@ -204,13 +244,22 @@ export default function AdminAlertDetailPage() {
     }
   }
 
+  // ─── FIX 2: handleEdit — update state AND re-fetch to sync everything ────
   const handleEdit = async (form) => {
     try {
       const res = await api.patch(`/alerts/${id}/`, form)
-      setAlert(res.data); setEditModal(false); showToast('Alert updated successfully.'); resetTimer()
+      if (isMounted.current) {
+        setAlert(res.data)          // immediate UI update
+        setEditModal(false)
+        showToast('Alert updated successfully.')
+        resetTimer()
+        fetchData(true)             // full re-fetch to sync derived fields
+      }
     } catch (e) {
       const data = e.response?.data
-      showToast(typeof data === 'object' ? Object.values(data).flat().join(' ') : 'Failed to update.', 'error')
+      const msg = typeof data === 'object' ? Object.values(data).flat().join(' ') : 'Failed to update.'
+      showToast(msg, 'error')
+      throw e                       // re-throw so EditModal can clear its saving state
     }
   }
 
@@ -278,8 +327,6 @@ export default function AdminAlertDetailPage() {
 .aad-spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:aadSpinner .8s linear infinite;}
 @keyframes aadSpinner{to{transform:rotate(360deg);}}
 .aad-error{background:#fde8e8;color:var(--red);padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;}
-
-/* Hero */
 .aad-hero{background:var(--white);border-radius:16px;padding:24px 28px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:18px;}
 .aad-hero-top{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;}
 .aad-hero-icon{width:58px;height:58px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -302,7 +349,7 @@ export default function AdminAlertDetailPage() {
 .aad-chip.st-dismissed{background:#f0f2f0;color:var(--muted);}
 .aad-chip.st-snoozed{background:#eff6ff;color:var(--blue);}
 .aad-hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
-.aad-action-btn{border:none;border-radius:10px;padding:9px 18px;font-family:'DM Serif Display',serif;font-size:13px;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:6px;}
+.aad-action-btn{border:none;border-radius:10px;padding:9px 18px;font-family:'DM Serif Display',serif;font-size:13px;cursor:pointer;transition:background .15s,opacity .15s;display:flex;align-items:center;gap:6px;}
 .aad-action-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;}
 .aad-action-btn.ack{background:#fff8ec;color:var(--amber);}
 .aad-action-btn.ack:hover{background:#fde8c0;}
@@ -314,13 +361,9 @@ export default function AdminAlertDetailPage() {
 .aad-action-btn.dismiss:hover{background:#f5c6c6;}
 .aad-action-btn.reopen{background:#fff8ec;color:var(--amber);}
 .aad-action-btn.reopen:hover{background:#fde8c0;}
-.aad-action-btn:disabled{opacity:.5;cursor:not-allowed;}
-
-/* Severity pulse for active critical */
+.aad-action-btn:disabled{opacity:.45;cursor:not-allowed;}
 .aad-pulse{animation:aadPulse 2s ease-in-out infinite;}
 @keyframes aadPulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.25);}50%{box-shadow:0 0 0 8px rgba(231,76,60,0);}}
-
-/* Grid & cards */
 .aad-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
 .aad-mini-stat{background:var(--white);border-radius:12px;padding:14px 16px;box-shadow:0 1px 6px rgba(0,0,0,.05);}
 .aad-mini-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--pale);margin-bottom:5px;}
@@ -344,11 +387,14 @@ export default function AdminAlertDetailPage() {
 .aad-info-value.muted{color:var(--muted);}
 .aad-info-value a{color:var(--green);text-decoration:none;}
 .aad-info-value a:hover{text-decoration:underline;}
-
-/* Message / description box */
 .aad-message-box{background:var(--bg);border-radius:12px;padding:16px 18px;font-size:14px;color:var(--ink);line-height:1.7;border-left:3px solid var(--green);}
-
-/* Related entity rows */
+/* Company banner */
+.aad-company-banner{background:linear-gradient(135deg,var(--green-light) 0%,#fff 100%);border:1.5px solid #c8e6d5;border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+.aad-company-logo{width:44px;height:44px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0;}
+.aad-company-info{flex:1;min-width:0;}
+.aad-company-label{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--pale);margin-bottom:3px;}
+.aad-company-name{font-size:16px;color:var(--ink);}
+.aad-company-meta{font-size:12px;color:var(--muted);margin-top:2px;}
 .aad-entity-row{display:flex;align-items:center;gap:12px;padding:12px 10px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;transition:background .12s,border-color .12s;margin-bottom:10px;}
 .aad-entity-row:last-child{margin-bottom:0;}
 .aad-entity-row:hover{background:var(--bg);border-color:var(--green);}
@@ -359,8 +405,6 @@ export default function AdminAlertDetailPage() {
 .aad-entity-meta{font-size:11.5px;color:var(--pale);}
 .aad-entity-arrow{color:var(--pale);}
 .aad-entity-arrow svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;}
-
-/* Notes */
 .aad-notes-list{margin-bottom:14px;}
 .aad-note-item{padding:10px 14px;background:var(--bg);border-radius:10px;margin-bottom:8px;font-size:13px;color:var(--ink);line-height:1.6;border-left:2px solid var(--border);}
 .aad-note-item:last-child{margin-bottom:0;}
@@ -371,8 +415,6 @@ export default function AdminAlertDetailPage() {
 .aad-note-submit{background:var(--green);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-family:'DM Serif Display',serif;font-size:13px;cursor:pointer;white-space:nowrap;transition:background .15s;}
 .aad-note-submit:hover{background:var(--green-dark);}
 .aad-note-submit:disabled{opacity:.5;cursor:not-allowed;}
-
-/* Similar alerts */
 .aad-alert-row{display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid #f5f7f5;cursor:pointer;border-radius:8px;transition:background .12s;}
 .aad-alert-row:last-child{border-bottom:none;}
 .aad-alert-row:hover{background:var(--bg);}
@@ -387,8 +429,6 @@ export default function AdminAlertDetailPage() {
 .aad-alert-badge.dismissed{background:#f0f2f0;color:var(--muted);}
 .aad-alert-badge.snoozed{background:#eff6ff;color:var(--blue);}
 .aad-no-data{text-align:center;padding:22px 16px;color:var(--pale);font-size:13px;line-height:1.7;}
-
-/* Status timeline */
 .aad-timeline{padding:0;list-style:none;}
 .aad-tl-item{display:flex;gap:12px;padding-bottom:18px;position:relative;}
 .aad-tl-item:last-child{padding-bottom:0;}
@@ -398,8 +438,6 @@ export default function AdminAlertDetailPage() {
 .aad-tl-body{flex:1;}
 .aad-tl-label{font-size:13.5px;color:var(--ink);margin-bottom:2px;}
 .aad-tl-time{font-size:11px;color:var(--pale);}
-
-/* Notif-style rows */
 .aad-notif-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f7f5;}
 .aad-notif-row:last-child{border-bottom:none;}
 .aad-notif-label{font-size:13.5px;color:var(--ink);}
@@ -407,8 +445,6 @@ export default function AdminAlertDetailPage() {
 .aad-notif-val.yes{background:var(--green-light);color:var(--green);}
 .aad-notif-val.no{background:#f0f2f0;color:var(--muted);}
 .aad-notif-val.warn{background:#fff8ec;color:var(--amber);}
-
-/* Modal */
 .aad-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
 .aad-modal{background:var(--white);border-radius:16px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.15);overflow:hidden;}
 .aad-modal-hdr{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
@@ -430,19 +466,15 @@ export default function AdminAlertDetailPage() {
 .aad-btn-danger{background:var(--red);color:#fff;border:none;border-radius:9px;padding:9px 20px;font-family:'DM Serif Display',serif;font-size:13px;cursor:pointer;}
 .aad-btn-amber{background:var(--amber);color:#fff;border:none;border-radius:9px;padding:9px 20px;font-family:'DM Serif Display',serif;font-size:13px;cursor:pointer;}
 .aad-btn-blue{background:var(--blue);color:#fff;border:none;border-radius:9px;padding:9px 20px;font-family:'DM Serif Display',serif;font-size:13px;cursor:pointer;}
-
-/* Toast */
 .aad-toast{position:fixed;bottom:20px;right:20px;z-index:700;display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:10px;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.15);animation:aadSlide .25s ease;}
 @keyframes aadSlide{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
 .aad-toast.success{background:var(--green);color:#fff;}
 .aad-toast.error{background:var(--red);color:#fff;}
-
 @media(max-width:900px){.aad-grid{grid-template-columns:1fr;}.aad-stats-row{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:768px){.aad-sidebar{transform:translateX(-100%);}.aad-sidebar.open{transform:translateX(0);}.aad-main{margin-left:0;}.aad-hamburger{display:flex;}.aad-content{padding:14px 16px 32px;}.aad-info-grid{grid-template-columns:1fr;}.aad-info-cell:nth-last-child(-n+2){border-bottom:1px solid #f5f7f5;}.aad-info-cell:last-child{border-bottom:none;}.aad-field-row{grid-template-columns:1fr;}}
 @media(max-width:480px){.aad-stats-row{grid-template-columns:1fr;}.aad-topbar{padding:0 14px;}}
 `
 
-  // Build status timeline from alert data
   const buildTimeline = (a) => {
     if (!a) return []
     const items = []
@@ -455,6 +487,10 @@ export default function AdminAlertDetailPage() {
 
   const timeline = buildTimeline(alert)
   const isResolved = alert?.status === 'resolved' || alert?.status === 'dismissed'
+
+  // Company display name helper
+  const companyName = relatedCompany?.name || relatedCompany?.company_name
+    || alert?.company_name || relatedCustomer?.company_name || null
 
   return (
     <>
@@ -516,6 +552,24 @@ export default function AdminAlertDetailPage() {
               <div className="aad-loading"><div className="aad-spinner"/>Loading alert&hellip;</div>
             ) : !alert ? null : (
               <>
+                {/* ── Company Banner ── */}
+                {companyName && (
+                  <div className="aad-company-banner">
+                    <div className="aad-company-logo">
+                      {companyName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="aad-company-info">
+                      <div className="aad-company-label">Company</div>
+                      <div className="aad-company-name">{companyName}</div>
+                      {(relatedCompany?.phone || relatedCompany?.email) && (
+                        <div className="aad-company-meta">
+                          {relatedCompany.phone || ''}{relatedCompany.phone && relatedCompany.email ? ' · ' : ''}{relatedCompany.email || ''}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Hero */}
                 <div className="aad-hero">
                   <div className="aad-hero-top">
@@ -529,7 +583,10 @@ export default function AdminAlertDetailPage() {
                     </div>
                     <div className="aad-hero-info">
                       <div className="aad-hero-title">{alert.title || fmt(alert.alert_type || 'Smart Alert')}</div>
-                      <div className="aad-hero-type">{fmt(alert.alert_type || 'Alert')} &nbsp;·&nbsp; Alert #{alert.id}</div>
+                      <div className="aad-hero-type">
+                        {fmt(alert.alert_type || 'Alert')} &nbsp;·&nbsp; Alert #{alert.id}
+                        {companyName && <> &nbsp;·&nbsp; <span style={{color:'var(--green)'}}>{companyName}</span></>}
+                      </div>
                       <div className="aad-hero-chips">
                         <span className={`aad-chip sev-${severity.cls}`}>⬤ {severity.label}</span>
                         <span className={`aad-chip st-${statusCfg.cls}`}>{statusCfg.label}</span>
@@ -582,7 +639,7 @@ export default function AdminAlertDetailPage() {
                 <div className="aad-stats-row">
                   <div className="aad-mini-stat">
                     <div className="aad-mini-label">Severity</div>
-                    <div className={`aad-mini-val sev-${severity.cls}`} style={{fontSize:16,paddingTop:4}}>{severity.label}</div>
+                    <div className={`aad-mini-val`} style={{fontSize:16,paddingTop:4,color:severity.color}}>{severity.label}</div>
                     <div className="aad-mini-sub">{fmt(alert.alert_type || '—')}</div>
                   </div>
                   <div className="aad-mini-stat">
@@ -621,6 +678,9 @@ export default function AdminAlertDetailPage() {
                         <div className="aad-info-cell"><div className="aad-info-label">Severity</div><div className="aad-info-value" style={{color: severity.color}}>{severity.label}</div></div>
                         <div className="aad-info-cell"><div className="aad-info-label">Priority Score</div><div className="aad-info-value">{alert.priority ?? '—'}</div></div>
                         <div className="aad-info-cell"><div className="aad-info-label">Source</div><div className="aad-info-value muted">{fmt(alert.source || alert.triggered_by || 'System')}</div></div>
+                        {companyName && (
+                          <div className="aad-info-cell"><div className="aad-info-label">Company</div><div className="aad-info-value" style={{color:'var(--green)'}}>{companyName}</div></div>
+                        )}
                         <div className="aad-info-cell"><div className="aad-info-label">Created At</div><div className="aad-info-value muted">{fmtDateTime(alert.created_at)}</div></div>
                         <div className="aad-info-cell"><div className="aad-info-label">Last Updated</div><div className="aad-info-value muted">{fmtDateTime(alert.updated_at)}</div></div>
                         {alert.snoozed_until && (
@@ -693,7 +753,6 @@ export default function AdminAlertDetailPage() {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                         Notes &amp; Actions
                       </div>
-                      {/* Render notes: try notes array, then string, then resolution_notes */}
                       <div className="aad-notes-list">
                         {Array.isArray(alert.notes) && alert.notes.length > 0 ? (
                           alert.notes.map((n, i) => (
@@ -733,7 +792,6 @@ export default function AdminAlertDetailPage() {
 
                   {/* Right column */}
                   <div>
-                    {/* Status Timeline */}
                     <div className="aad-card">
                       <div className="aad-card-title">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -758,7 +816,6 @@ export default function AdminAlertDetailPage() {
                       )}
                     </div>
 
-                    {/* Alert Config */}
                     <div className="aad-card">
                       <div className="aad-card-title">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -771,7 +828,6 @@ export default function AdminAlertDetailPage() {
                       <div className="aad-notif-row"><span className="aad-notif-label">Send SMS</span><span className={`aad-notif-val ${alert.send_sms ? 'yes' : 'no'}`}>{alert.send_sms ? '✓ Yes' : '✗ No'}</span></div>
                     </div>
 
-                    {/* Account Info */}
                     <div className="aad-card">
                       <div className="aad-card-title">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -780,11 +836,11 @@ export default function AdminAlertDetailPage() {
                       <div className="aad-notif-row"><span className="aad-notif-label">Alert ID</span><span style={{fontSize:13,color:'var(--ink)',fontWeight:600}}>#{alert.id}</span></div>
                       <div className="aad-notif-row"><span className="aad-notif-label">Status</span><span className={`aad-notif-val st-${statusCfg.cls}`}>{statusCfg.label}</span></div>
                       <div className="aad-notif-row"><span className="aad-notif-label">Severity</span><span style={{fontSize:13,color:severity.color}}>{severity.label}</span></div>
+                      {companyName && <div className="aad-notif-row"><span className="aad-notif-label">Company</span><span style={{fontSize:13,color:'var(--green)'}}>{companyName}</span></div>}
                       <div className="aad-notif-row"><span className="aad-notif-label">Created</span><span style={{fontSize:13,color:'var(--muted)'}}>{fmtDate(alert.created_at)}</span></div>
                       <div className="aad-notif-row"><span className="aad-notif-label">Last Updated</span><span style={{fontSize:13,color:'var(--muted)'}}>{fmtDate(alert.updated_at)}</span></div>
                     </div>
 
-                    {/* Similar Alerts */}
                     {allAlerts.length > 0 && (
                       <div className="aad-card">
                         <div className="aad-card-title">
@@ -814,7 +870,6 @@ export default function AdminAlertDetailPage() {
           </div>
         </div>
 
-        {/* Action modals */}
         {actionModal && alert && (
           <ActionModal
             type={actionModal}
@@ -845,7 +900,7 @@ export default function AdminAlertDetailPage() {
   )
 }
 
-// ─── Action Modal ────────────────────────────────────────────────────────────
+// ─── Action Modal ─────────────────────────────────────────────────────────────
 function ActionModal({ type, alert, onClose, onConfirm }) {
   const [saving, setSaving] = useState(false)
   const [snoozeHours, setSnoozeHours] = useState(4)
@@ -858,7 +913,6 @@ function ActionModal({ type, alert, onClose, onConfirm }) {
       iconColor: '#e6a817', iconBg: '#fff8ec',
       desc: 'Acknowledge this alert to indicate you are aware and working on it.',
       btnLabel: 'Acknowledge', btnClass: 'aad-btn-amber',
-      action: async () => onConfirm('acknowledged', { acknowledged_at: new Date().toISOString() }),
     },
     resolve: {
       title: 'Resolve Alert',
@@ -866,7 +920,6 @@ function ActionModal({ type, alert, onClose, onConfirm }) {
       iconColor: '#1a6b3c', iconBg: '#edf6f1',
       desc: 'Mark this alert as resolved. You can add a resolution note.',
       btnLabel: 'Mark Resolved', btnClass: 'aad-btn-save',
-      action: async () => onConfirm('resolved', { resolved_at: new Date().toISOString(), resolution_notes: resolutionNote }),
     },
     snooze: {
       title: 'Snooze Alert',
@@ -874,10 +927,6 @@ function ActionModal({ type, alert, onClose, onConfirm }) {
       iconColor: '#3b82f6', iconBg: '#eff6ff',
       desc: 'Temporarily silence this alert for a set number of hours.',
       btnLabel: 'Snooze', btnClass: 'aad-btn-blue',
-      action: async () => {
-        const until = new Date(Date.now() + snoozeHours * 3600000).toISOString()
-        return onConfirm('snoozed', { snoozed_until: until })
-      },
     },
     dismiss: {
       title: 'Dismiss Alert',
@@ -885,19 +934,40 @@ function ActionModal({ type, alert, onClose, onConfirm }) {
       iconColor: '#e74c3c', iconBg: '#fde8e8',
       desc: 'Dismiss this alert. It will be archived and no longer shown as active.',
       btnLabel: 'Dismiss', btnClass: 'aad-btn-danger',
-      action: async () => onConfirm('dismissed'),
     },
   }
 
   const cfg = configs[type]
   if (!cfg) return null
 
+  // ─── FIX 3: build payload here, call onConfirm, handle errors ────────────
+  const handleConfirm = async () => {
+    setSaving(true)
+    try {
+      let extra = {}
+      if (type === 'acknowledge') extra = { acknowledged_at: new Date().toISOString() }
+      if (type === 'resolve')     extra = { resolved_at: new Date().toISOString(), resolution_notes: resolutionNote }
+      if (type === 'snooze')      extra = { snoozed_until: new Date(Date.now() + snoozeHours * 3600000).toISOString() }
+      // onConfirm handles setAlert + modal close on success, toast on error
+      await onConfirm(
+        type === 'acknowledge' ? 'acknowledged'
+        : type === 'resolve'  ? 'resolved'
+        : type === 'snooze'   ? 'snoozed'
+        : 'dismissed',
+        extra
+      )
+      // If onConfirm threw, we stay in the modal (error toast shown by parent)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="aad-modal-bg" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="aad-modal" style={{ maxWidth: 440 }}>
         <div className="aad-modal-hdr">
           <span className="aad-modal-title">{cfg.title}</span>
-          <button className="aad-modal-close" onClick={onClose}>
+          <button className="aad-modal-close" onClick={onClose} disabled={saving}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
@@ -935,12 +1005,8 @@ function ActionModal({ type, alert, onClose, onConfirm }) {
           )}
         </div>
         <div className="aad-modal-ftr">
-          <button className="aad-btn-cancel" onClick={onClose}>Cancel</button>
-          <button
-            className={cfg.btnClass}
-            disabled={saving}
-            onClick={async () => { setSaving(true); await cfg.action(); setSaving(false) }}
-          >
+          <button className="aad-btn-cancel" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className={cfg.btnClass} disabled={saving} onClick={handleConfirm}>
             {saving ? 'Saving…' : cfg.btnLabel}
           </button>
         </div>
@@ -951,29 +1017,51 @@ function ActionModal({ type, alert, onClose, onConfirm }) {
 
 // ─── Edit Alert Modal ─────────────────────────────────────────────────────────
 function EditAlertModal({ alert, onClose, onSave }) {
-  const [form, setForm] = useState({
-    title: alert.title || '',
-    severity: alert.severity || 'medium',
-    priority: alert.priority || 5,
-    status: alert.status || 'active',
+  // ─── FIX 4: initialise form fresh from alert prop every open ─────────────
+  const [form, setForm] = useState(() => ({
+    title:        alert.title || '',
+    severity:     alert.severity || 'medium',
+    priority:     alert.priority ?? 5,
+    status:       alert.status || 'active',
     notify_admin: alert.notify_admin ?? true,
-    send_email: alert.send_email ?? false,
-    send_sms: alert.send_sms ?? false,
+    send_email:   alert.send_email ?? false,
+    send_sms:     alert.send_sms ?? false,
     is_recurring: alert.is_recurring ?? false,
-  })
+  }))
   const [saving, setSaving] = useState(false)
+  const [localError, setLocalError] = useState('')
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleSave = async () => {
+    setSaving(true)
+    setLocalError('')
+    try {
+      await onSave(form)
+      // onSave closes modal on success; if it throws we show error below
+    } catch (e) {
+      const data = e?.response?.data
+      setLocalError(typeof data === 'object' ? Object.values(data).flat().join(' ') : 'Failed to save changes.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="aad-modal-bg" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="aad-modal">
         <div className="aad-modal-hdr">
           <span className="aad-modal-title">Edit Alert</span>
-          <button className="aad-modal-close" onClick={onClose}>
+          <button className="aad-modal-close" onClick={onClose} disabled={saving}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
         <div className="aad-modal-body">
+          {/* ─── FIX 5: inline error so user sees exactly what failed ───── */}
+          {localError && (
+            <div style={{background:'#fde8e8',color:'#e74c3c',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:14}}>
+              {localError}
+            </div>
+          )}
           <div className="aad-field">
             <label>Alert Title</label>
             <input value={form.title} onChange={e => set('title', e.target.value)} placeholder="Alert title…"/>
@@ -1013,19 +1101,15 @@ function EditAlertModal({ alert, onClose, onSave }) {
               ['is_recurring', 'Mark as Recurring'],
             ].map(([key, label]) => (
               <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0' }}>
-                <input type="checkbox" id={key} checked={form[key]} onChange={e => set(key, e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--green)', cursor: 'pointer' }}/>
-                <label htmlFor={key} style={{ fontSize: 13, color: 'var(--ink)', cursor: 'pointer' }}>{label}</label>
+                <input type="checkbox" id={`edit_${key}`} checked={!!form[key]} onChange={e => set(key, e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--green)', cursor: 'pointer' }}/>
+                <label htmlFor={`edit_${key}`} style={{ fontSize: 13, color: 'var(--ink)', cursor: 'pointer' }}>{label}</label>
               </div>
             ))}
           </div>
         </div>
         <div className="aad-modal-ftr">
-          <button className="aad-btn-cancel" onClick={onClose}>Cancel</button>
-          <button
-            className="aad-btn-save"
-            disabled={saving}
-            onClick={async () => { setSaving(true); await onSave(form); setSaving(false) }}
-          >
+          <button className="aad-btn-cancel" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="aad-btn-save" disabled={saving} onClick={handleSave}>
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
