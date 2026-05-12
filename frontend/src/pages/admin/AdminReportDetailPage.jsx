@@ -1,72 +1,7 @@
-import { useState } from "react";
-
-// ─── Sample Data (replace with real props/API data) ───────────────────────────
-const DEMO_DATA = {
-  job: {
-    id: 1042,
-    job_uuid: "a3f2c1d4-8b7e-4a2f-9c1e-3d5f6b8e0a2c",
-    status: "completed",
-    service_type: "termite",
-    scheduled_datetime: "2025-05-10T09:00:00",
-    completed_at: "2025-05-10T11:30:00",
-    location: "Block B, Sector 12, Vadodara",
-    notes: "Customer requested extra attention to kitchen and bathroom areas.",
-    signed_by: "Rajesh Mehta",
-    signed_at: "2025-05-10T11:45:00",
-  },
-  customer: {
-    name: "Priya Sharma",
-    email: "priya.sharma@email.com",
-    phone: "+91 98765 43210",
-    company_name: "Sharma Residency",
-    address: "12, Rose Garden Society",
-    city: "Vadodara",
-  },
-  technician: {
-    first_name: "Amit",
-    last_name: "Patel",
-    email: "amit.patel@pestpro.com",
-    phone: "+91 91234 56789",
-    username: "amit.patel",
-  },
-  observations: [
-    {
-      pest_type: "Termite",
-      observation_type: "Infestation",
-      area: "Kitchen & Walls",
-      severity: "High",
-      treatment: "Chemical Injection",
-      chemical_used: "Chlorpyrifos 20 EC",
-      quantity: "2.5 Litres",
-      recorded_at: "2025-05-10T10:15:00",
-      notes: "Heavy activity found near skirting boards and door frames.",
-      termite_detail: {
-        drilling_done: true,
-        chemical_injected: true,
-        affected_area: "80 sq ft",
-      },
-    },
-    {
-      pest_type: "Cockroach",
-      observation_type: "Preventive",
-      area: "Bathroom",
-      severity: "Low",
-      treatment: "Gel Baiting",
-      chemical_used: "Fipronil Gel",
-      quantity: "3 Syringes",
-      recorded_at: "2025-05-10T11:00:00",
-      notes: "Gel applied under sink and behind commode.",
-      cockroach_detail: {
-        gel_applied: true,
-        spray_used: false,
-        infestation_level: "Low",
-      },
-    },
-  ],
-  alerts: [
-    { message: "Follow-up visit recommended within 30 days.", alert_type: "Reminder" },
-  ],
-};
+// REPLACE with these:
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../../api/axios";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmt(dateStr, opts = {}) {
@@ -81,7 +16,7 @@ function title(str) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-// ─── CSS (injected via style tag in head) ─────────────────────────────────────
+// ─── CSS ──────────────────────────────────────────────────────────────────────
 const css = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
 
@@ -112,6 +47,23 @@ const css = `
     max-width: 860px;
     margin: 0 auto;
   }
+
+  /* BACK BUTTON */
+  .report-back-bar { max-width:860px; margin: 0 auto 16px; }
+  .report-back-btn {
+    background: var(--bg); border: 1.5px solid var(--border); border-radius: 9px;
+    padding: 8px 16px; font-family: 'DM Serif Display', serif; font-size: 13px;
+    color: var(--muted); cursor: pointer; display: inline-flex; align-items: center;
+    gap: 6px; transition: background .15s, color .15s;
+  }
+  .report-back-btn:hover { background: #e2e8e2; color: var(--ink); }
+  .report-back-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+  /* LOADING / ERROR */
+  .report-loading { display: flex; align-items: center; justify-content: center; padding: 80px 20px; color: var(--pale); font-size: 14px; gap: 12px; }
+  .report-spinner { width: 22px; height: 22px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: reportSpin .8s linear infinite; }
+  @keyframes reportSpin { to { transform: rotate(360deg); } }
+  .report-error-box { max-width: 860px; margin: 32px auto; background: #fde8e8; color: var(--red); padding: 16px 20px; border-radius: 12px; font-size: 13px; }
 
   /* HEADER */
   .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; padding-bottom:20px; border-bottom:2px solid var(--green); }
@@ -185,13 +137,12 @@ const css = `
 
   /* PRINT */
   @media print {
+    .report-back-bar { display: none !important; }
     .report-root { padding:20px; }
-    .no-print { display:none !important; }
   }
 `;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
 function SectionTitle({ children }) {
   return <div className="section-title">{children}</div>;
 }
@@ -263,7 +214,6 @@ function ObservationCard({ obs, index }) {
             Activity level: {title(obs.rodent_detail.activity_level)}
           </ObsNotes>
         )}
-
         {obs.flying_insect_detail && (
           <ObsNotes label="Flying Insect Details">
             Device type: {obs.flying_insect_detail.device_type || "—"} &nbsp;·&nbsp;
@@ -271,7 +221,6 @@ function ObservationCard({ obs, index }) {
             Action: {title(obs.flying_insect_detail.action_taken)}
           </ObsNotes>
         )}
-
         {obs.cockroach_detail && (
           <ObsNotes label="Cockroach Details">
             Gel applied: {obs.cockroach_detail.gel_applied ? "Yes" : "No"} &nbsp;·&nbsp;
@@ -279,7 +228,6 @@ function ObservationCard({ obs, index }) {
             Infestation level: {title(obs.cockroach_detail.infestation_level)}
           </ObsNotes>
         )}
-
         {obs.termite_detail && (
           <ObsNotes label="Termite Details">
             Drilling done: {obs.termite_detail.drilling_done ? "Yes" : "No"} &nbsp;·&nbsp;
@@ -287,7 +235,6 @@ function ObservationCard({ obs, index }) {
             Affected area: {obs.termite_detail.affected_area || "—"}
           </ObsNotes>
         )}
-
         {obs.mosquito_detail && (
           <ObsNotes label="Mosquito Details">
             Fogging done: {obs.mosquito_detail.fogging_done ? "Yes" : "No"} &nbsp;·&nbsp;
@@ -295,13 +242,11 @@ function ObservationCard({ obs, index }) {
             Breeding sites found: {obs.mosquito_detail.breeding_sites_found ?? "0"}
           </ObsNotes>
         )}
-
         {obs.general_detail && (
           <ObsNotes label="General Details">
             {obs.general_detail.description || "No additional details."}
           </ObsNotes>
         )}
-
         {obs.notes && (
           <ObsNotes label="Technician Notes">{obs.notes}</ObsNotes>
         )}
@@ -311,23 +256,123 @@ function ObservationCard({ obs, index }) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function ServiceReport({ data = DEMO_DATA }) {
-  const { job, customer, technician, observations, alerts } = data;
+// FIX: Accept jobId + onClose props. When jobId is provided, fetch real data
+//      from the API instead of using hardcoded DEMO_DATA.
+// TO this:
+export default function AdminReportDetailPage({ jobId: jobIdProp, onClose: onCloseProp }) {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const jobId = jobIdProp ?? id;
+  const onClose = onCloseProp ?? (() => navigate("/dashboard/reports"));
+
+  console.log("jobId =", jobId);
+
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState("");
+
+  useEffect(() => {
+  if (!jobId) {
+    setError("No job ID provided.");
+    setLoading(false);
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+
+  api.get(`/pdf/job/${jobId}/`)   // ← only this line changes
+    .then(res => {
+      const payload = res.data?.data ?? res.data;
+      setData(payload);
+    })
+    .catch(err => {
+      const msg = err.response?.data?.error
+        || err.response?.data?.detail
+        || "Failed to load report. Please try again.";
+      setError(msg);
+    })
+    .finally(() => setLoading(false));
+}, [jobId]);
+
+  // ── Loading state ──
+  if (loading) {
+    return (
+      <>
+        <style>{css}</style>
+        <div className="report-loading">
+          <div className="report-spinner" />
+          Loading report for Job #{jobId}…
+        </div>
+      </>
+    );
+  }
+
+  // ── Error state ──
+  if (error || !data) {
+    return (
+      <>
+        <style>{css}</style>
+        {onClose && (
+          <div className="report-back-bar">
+            <button className="report-back-btn" type="button" onClick={onClose}>
+              <svg viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              Back to Reports
+            </button>
+          </div>
+        )}
+        <div className="report-error-box">{error || "No report data available."}</div>
+      </>
+    );
+  }
+
+  // ── Destructure real API data ──
+  // FIX: customer name, technician name, observations etc. all come from the
+  //      real API response instead of the hardcoded DEMO_DATA object.
+  const { job, customer, technician, observations = [], alerts = [] } = data;
+
+  // FIX: Build the customer's display name from whatever fields your API returns.
+  const customerName =
+    customer?.name ||
+    (customer?.first_name
+      ? `${customer.first_name} ${customer.last_name || ""}`.trim()
+      : null) ||
+    customer?.username ||
+    "Unknown Customer";
+
+  const techName = technician
+    ? (technician.first_name
+        ? `${technician.first_name} ${technician.last_name || ""}`.trim()
+        : technician.username)
+    : null;
 
   const statusColor =
-    job.status === "completed" || job.status === "report_sent"
+    job?.status === "completed" || job?.status === "report_sent"
       ? "green"
-      : job.status === "cancelled"
+      : job?.status === "cancelled"
       ? "red"
       : "amber";
 
-  const generatedAt = new Date().toLocaleDateString("en-IN", {
-    day: "2-digit", month: "short", year: "numeric",
-  }) + ", " + new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const generatedAt =
+    new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) +
+    ", " +
+    new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
 
   return (
     <>
       <style>{css}</style>
+
+      {/* FIX: Back button so the user can return to the list without a page reload */}
+      {onClose && (
+        <div className="report-back-bar">
+          <button className="report-back-btn" type="button" onClick={onClose}>
+            <svg viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Back to Reports
+          </button>
+        </div>
+      )}
+
       <div className="report-root">
 
         {/* ── HEADER ── */}
@@ -344,9 +389,12 @@ export default function ServiceReport({ data = DEMO_DATA }) {
           <div className="header-right">
             <div className="report-title">Service Report</div>
             <div className="report-meta">
-              Job ID &nbsp;<span>#{job.id}</span><br />
+              {/* FIX: Show real job ID and UUID from API */}
+              Job ID &nbsp;<span>#{job?.id}</span><br />
+              {/* FIX: Show the real customer name prominently */}
+              Customer &nbsp;<span>{customerName}</span><br />
               Generated &nbsp;<span>{generatedAt}</span><br />
-              Report UUID &nbsp;<span>{job.job_uuid}</span>
+              {job?.job_uuid && <>Report UUID &nbsp;<span>{job.job_uuid}</span></>}
             </div>
           </div>
         </div>
@@ -354,15 +402,16 @@ export default function ServiceReport({ data = DEMO_DATA }) {
         {/* ── JOB SUMMARY ── */}
         <SectionTitle>Job Summary</SectionTitle>
         <div className="meta-grid">
-          <MetaCell label="Status" value={title(job.status)} color={statusColor} />
-          <MetaCell label="Service Type" value={title(job.service_type)} />
-          <MetaCell label="Job UUID" value={job.job_uuid} color="muted" small />
-          <MetaCell label="Scheduled Date" value={fmt(job.scheduled_datetime)} color="muted" />
-          <MetaCell label="Completed At" value={fmt(job.completed_at)} color="muted" />
-          <MetaCell label="Location" value={job.location} color="muted" />
+          <MetaCell label="Status"         value={title(job?.status)}       color={statusColor} />
+          <MetaCell label="Service Type"   value={title(job?.service_type)} />
+          {/* FIX: Show customer name in the summary grid as well */}
+          <MetaCell label="Customer"       value={customerName}             color="muted" />
+          <MetaCell label="Scheduled Date" value={fmt(job?.scheduled_datetime)} color="muted" />
+          <MetaCell label="Completed At"   value={fmt(job?.completed_at)}   color="muted" />
+          <MetaCell label="Location"       value={job?.location}            color="muted" />
         </div>
 
-        {job.notes && (
+        {job?.notes && (
           <div className="obs-notes" style={{ marginBottom: 8 }}>
             <div className="obs-notes-label">Job Notes</div>
             {job.notes}
@@ -374,11 +423,12 @@ export default function ServiceReport({ data = DEMO_DATA }) {
         <InfoCard
           title="Contact Information"
           rows={[
-            { label: "Full Name", value: customer.name },
-            { label: "Email Address", value: customer.email },
-            { label: "Phone", value: customer.phone },
-            customer.company_name && { label: "Company", value: customer.company_name },
-            customer.address && {
+            // FIX: Use the normalised customerName so it always shows a real name
+            { label: "Full Name",     value: customerName },
+            { label: "Email Address", value: customer?.email },
+            { label: "Phone",         value: customer?.phone },
+            customer?.company_name && { label: "Company", value: customer.company_name },
+            customer?.address && {
               label: "Address",
               value: `${customer.address}${customer.city ? ", " + customer.city : ""}`,
             },
@@ -387,19 +437,14 @@ export default function ServiceReport({ data = DEMO_DATA }) {
 
         {/* ── TECHNICIAN DETAILS ── */}
         <SectionTitle>Assigned Technician</SectionTitle>
-        {technician ? (
+        {techName ? (
           <InfoCard
             title="Technician Information"
             rows={[
-              {
-                label: "Name",
-                value: technician.first_name
-                  ? `${technician.first_name} ${technician.last_name}`
-                  : technician.username,
-              },
-              { label: "Email", value: technician.email },
-              { label: "Phone", value: technician.phone },
-              { label: "Username", value: `@${technician.username}` },
+              { label: "Name",     value: techName },
+              { label: "Email",    value: technician?.email },
+              { label: "Phone",    value: technician?.phone },
+              { label: "Username", value: technician?.username ? `@${technician.username}` : "—" },
             ]}
           />
         ) : (
@@ -408,7 +453,7 @@ export default function ServiceReport({ data = DEMO_DATA }) {
 
         {/* ── SERVICE OBSERVATIONS ── */}
         <SectionTitle>Service Observations</SectionTitle>
-        {observations && observations.length > 0 ? (
+        {observations.length > 0 ? (
           observations.map((obs, i) => (
             <ObservationCard key={i} obs={obs} index={i} />
           ))
@@ -417,7 +462,7 @@ export default function ServiceReport({ data = DEMO_DATA }) {
         )}
 
         {/* ── ACTIVE ALERTS ── */}
-        {alerts && alerts.length > 0 && (
+        {alerts.length > 0 && (
           <>
             <SectionTitle>Active Alerts</SectionTitle>
             {alerts.map((alert, i) => (
@@ -432,14 +477,12 @@ export default function ServiceReport({ data = DEMO_DATA }) {
 
         {/* ── DIGITAL SIGNATURE ── */}
         <SectionTitle>Digital Signature</SectionTitle>
-        {job.signed_by ? (
+        {job?.signed_by ? (
           <div className="signature-box">
             <div>
               <div className="signature-label">Signed By</div>
               <div className="signature-name">{job.signed_by}</div>
-              <div className="signature-date">
-                {fmt(job.signed_at || job.completed_at)}
-              </div>
+              <div className="signature-date">{fmt(job.signed_at || job.completed_at)}</div>
             </div>
             <div>
               <div className="signature-verified">✓ Digitally Verified</div>
@@ -457,9 +500,10 @@ export default function ServiceReport({ data = DEMO_DATA }) {
             This is a system-generated report.
           </div>
           <div className="footer-right">
-            Job #{job.id} &nbsp;·&nbsp; {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}<br />
-            Report generated by PestPro System<br />
-            <span style={{ color: "var(--green)" }}>{job.job_uuid}</span>
+            {/* FIX: Show real customer name in footer too */}
+            {customerName} &nbsp;·&nbsp; Job #{job?.id}<br />
+            {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}<br />
+            {job?.job_uuid && <span style={{ color: "var(--green)" }}>{job.job_uuid}</span>}
           </div>
         </div>
 

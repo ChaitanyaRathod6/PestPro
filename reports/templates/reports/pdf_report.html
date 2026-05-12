@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Service Report</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Service Report</h1>
+
+    <div class="section">
+        <strong>Job ID:</strong> {{ job.id }}
+    </div>
+
+    <div class="section">
+        <strong>Customer:</strong> {{ customer.full_name }}
+    </div>
+
+    <div class="section">
+        <strong>Generated At:</strong> {{ generated_at }}
+    </div>
+
+</body>
+</html>

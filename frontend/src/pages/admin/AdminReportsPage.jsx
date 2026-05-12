@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api/axios'
+// FIX: Import from the correct file name (AdminReportDetailPage, not Admin)
+import ServiceReport from './AdminReportDetailPage'
 
 /* ─────────────────────────────────────────────
    HELPERS
@@ -130,6 +132,8 @@ const S = `
 .rp-topbar-left{display:flex;align-items:center;gap:10px;}
 .rp-crumb{font-size:13px;color:var(--pale);}
 .rp-crumb span{color:var(--ink);}
+.rp-crumb-link{color:var(--ink);cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
+.rp-crumb-link:hover{color:var(--green);}
 .rp-topbar-right{display:flex;align-items:center;gap:10px;}
 .rp-ticker{font-size:12px;color:var(--pale);white-space:nowrap;}
 .rp-ticker.soon{color:var(--green);}
@@ -207,10 +211,15 @@ const S = `
 .rp-badge.purple{background:#ede9fe;color:var(--purple);}
 .rp-badge.muted{background:var(--bg);color:var(--muted);}
 .rp-card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;}
-.rp-btn-download{background:var(--green-light);color:var(--green);border:none;border-radius:8px;
+.rp-btn-view{background:var(--green-light);color:var(--green);border:none;border-radius:8px;
   padding:7px 14px;font-family:'DM Serif Display',serif;font-size:12.5px;
   cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
-.rp-btn-download:hover{background:#d5eee3;}
+.rp-btn-view:hover{background:#d5eee3;}
+.rp-btn-view svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;}
+.rp-btn-download{background:var(--bg);color:var(--muted);border:1.5px solid var(--border);border-radius:8px;
+  padding:7px 14px;font-family:'DM Serif Display',serif;font-size:12.5px;
+  cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:5px;white-space:nowrap;text-decoration:none;}
+.rp-btn-download:hover{background:#e2e8e2;color:var(--ink);}
 .rp-btn-download svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;}
 .rp-btn-regen{background:#fff8ec;color:var(--amber);border:none;border-radius:8px;
   padding:7px 14px;font-family:'DM Serif Display',serif;font-size:12.5px;
@@ -296,14 +305,58 @@ const S = `
 `
 
 /* ═══════════════════════════════════════════
+   SIDEBAR (extracted to avoid duplication)
+═══════════════════════════════════════════ */
+function Sidebar({ open, userName, userInitials, onNav, onClose, onLogout, viewingJobId }) {
+  return (
+    <aside className={`rp-sidebar${open ? ' open' : ''}`}>
+      <div className="rp-sb-logo">
+        <div className="rp-sb-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg>
+        </div>
+        <span className="rp-sb-brand">PestPro</span>
+      </div>
+      <nav className="rp-sb-nav">
+        {navItems.map(n => (
+          <div key={n.id}
+            className={`rp-sb-item${n.id === 'reports' ? ' active' : ''}`}
+            onClick={() => { onClose(); onNav(n.path) }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d={n.d}/>
+            </svg>
+            {n.label}
+          </div>
+        ))}
+      </nav>
+      <div className="rp-sb-user">
+        <div className="rp-sb-avatar">{userInitials}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div className="rp-sb-uname">{userName}</div>
+          <div className="rp-sb-urole">Administrator</div>
+        </div>
+        <button className="rp-sb-logout" type="button" onClick={onLogout} title="Logout">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+  )
+}
+
+/* ═══════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════ */
 export default function AdminReportsPage() {
   const { user, logout } = useAuth()
   const navigate         = useNavigate()
 
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [activeTab,   setActiveTab]   = useState('pdf')
+  const [sidebarOpen,   setSidebarOpen]   = useState(false)
+  const [activeTab,     setActiveTab]     = useState('pdf')
+
+  // Which job's report detail is open (null = list view)
+  const [viewingJobId,  setViewingJobId]  = useState(null)
 
   /* PDF state */
   const [reports,     setReports]     = useState([])
@@ -315,7 +368,7 @@ export default function AdminReportsPage() {
   const [emails,      setEmails]      = useState([])
   const [emailsLoad,  setEmailsLoad]  = useState(true)
   const [emailsErr,   setEmailsErr]   = useState('')
-  const [emailFilter, setEmailFilter] = useState('all')  // all | sent | failed | pending | retrying
+  const [emailFilter, setEmailFilter] = useState('all')
   const [emailSearch, setEmailSearch] = useState('')
 
   /* Email stats state */
@@ -347,7 +400,8 @@ export default function AdminReportsPage() {
     try {
       const res = await api.get('/reports/pdf/')
       if (!isMounted.current) return
-      setReports(res.data?.results || res.data || [])
+      const list = res.data?.results ?? res.data ?? []
+      setReports(Array.isArray(list) ? list : [])
     } catch (e) {
       if (!silent && isMounted.current)
         setReportsErr(e.response?.data?.error || 'Failed to load PDF reports.')
@@ -364,7 +418,8 @@ export default function AdminReportsPage() {
       if (emailFilter !== 'all') params.status = emailFilter
       const res = await api.get('/reports/emails/', { params })
       if (!isMounted.current) return
-      setEmails(res.data?.results || res.data || [])
+      const list = res.data?.results ?? res.data ?? []
+      setEmails(Array.isArray(list) ? list : [])
     } catch (e) {
       if (!silent && isMounted.current)
         setEmailsErr(e.response?.data?.error || 'Failed to load email logs.')
@@ -408,10 +463,7 @@ export default function AdminReportsPage() {
     return () => { isMounted.current = false; clearInterval(tickRef.current) }
   }, [fetchReports, fetchEmails, fetchStats, resetTimer])
 
-  /* re-fetch emails when filter changes */
-  useEffect(() => {
-    fetchEmails(true)
-  }, [emailFilter, fetchEmails])
+  useEffect(() => { fetchEmails(true) }, [emailFilter, fetchEmails])
 
   const manualRefresh = () => {
     setIsSpinning(true)
@@ -425,14 +477,13 @@ export default function AdminReportsPage() {
   const handleRegen = async (jobId) => {
     setRegenId(jobId)
     try {
-      const res = await api.post(`/reports/pdf/${jobId}/regenerate/`)
-      const updated = res.data?.report || res.data
-      setReports(prev => prev.map(r => r.job === jobId || r.job_id === jobId ? { ...r, ...updated } : r))
+      await api.post(`/reports/pdf/${jobId}/regenerate/`)
       showToast('PDF report regenerated successfully.')
-      fetchReports(true)
+      // FIX: Always re-fetch the full list after regeneration so the new
+      //      report entry appears immediately without a manual page refresh.
+      await fetchReports(true)
     } catch (e) {
-      const msg = e.response?.data?.error || 'Failed to regenerate report.'
-      showToast(msg, 'error')
+      showToast(e.response?.data?.error || 'Failed to regenerate report.', 'error')
     } finally {
       setRegenId(null)
     }
@@ -445,16 +496,18 @@ export default function AdminReportsPage() {
   }
 
   /* ── COMPUTED ── */
-  const totalPdfs    = reports.length
-  const validTokens  = reports.filter(r => !isExpired(r.token_expires_at)).length
-  const expiredTokens = reports.filter(r => isExpired(r.token_expires_at)).length
+  const totalPdfs     = reports.length
+  const validTokens   = reports.filter(r => !isExpired(r.token_expires_at)).length
+  const expiredTokens = reports.filter(r =>  isExpired(r.token_expires_at)).length
 
   const filteredReports = reports.filter(r => {
     if (!pdfSearch.trim()) return true
     const q = pdfSearch.toLowerCase()
+    // FIX: Also search by customer name when the API returns it on the list item
     return (
       String(r.job_id || r.job || '').includes(q) ||
-      (r.generated_by_name || '').toLowerCase().includes(q)
+      (r.generated_by_name  || '').toLowerCase().includes(q) ||
+      (r.customer_name      || '').toLowerCase().includes(q)
     )
   })
 
@@ -469,57 +522,27 @@ export default function AdminReportsPage() {
     )
   })
 
-  /* ── EMAIL STATUS COLOR ── */
   const statusColor = (s) => EMAIL_STATUS_CONFIG[s]?.color || 'muted'
   const typeColor   = (t) => EMAIL_TYPE_CONFIG[t]?.color   || 'muted'
   const typeLabel   = (t) => EMAIL_TYPE_CONFIG[t]?.label   || t
 
-  return (
+  // ── Shared layout shell ────────────────────────────────────────────────────
+  const Shell = ({ children, crumb }) => (
     <>
       <style>{S}</style>
       <div className="rp-root">
-
         <div className={`rp-overlay${sidebarOpen ? ' show' : ''}`} onClick={() => setSidebarOpen(false)}/>
 
-        {/* SIDEBAR */}
-        <aside className={`rp-sidebar${sidebarOpen ? ' open' : ''}`}>
-          <div className="rp-sb-logo">
-            <div className="rp-sb-icon">
-              <svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg>
-            </div>
-            <span className="rp-sb-brand">PestPro</span>
-          </div>
-          <nav className="rp-sb-nav">
-            {navItems.map(n => (
-              <div key={n.id}
-                className={`rp-sb-item${n.id === 'reports' ? ' active' : ''}`}
-                onClick={() => { setSidebarOpen(false); navigate(n.path) }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d={n.d}/>
-                </svg>
-                {n.label}
-              </div>
-            ))}
-          </nav>
-          <div className="rp-sb-user">
-            <div className="rp-sb-avatar">{userInitials}</div>
-            <div style={{flex:1,minWidth:0}}>
-              <div className="rp-sb-uname">{userName}</div>
-              <div className="rp-sb-urole">Administrator</div>
-            </div>
-            <button className="rp-sb-logout" type="button" onClick={handleLogout} title="Logout">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-              </svg>
-            </button>
-          </div>
-        </aside>
+        <Sidebar
+          open={sidebarOpen}
+          userName={userName}
+          userInitials={userInitials}
+          onNav={(path) => navigate(path)}
+          onClose={() => setSidebarOpen(false)}
+          onLogout={handleLogout}
+        />
 
-        {/* MAIN */}
         <div className="rp-main">
-
-          {/* TOPBAR */}
           <div className="rp-topbar">
             <div className="rp-topbar-left">
               <button className="rp-hamburger" type="button" onClick={() => setSidebarOpen(o => !o)}>
@@ -527,328 +550,24 @@ export default function AdminReportsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
               </button>
-              <span className="rp-crumb">Admin &nbsp;›&nbsp; <span>Reports</span></span>
+              {/* FIX: Breadcrumb updates correctly whether we're in list or detail view */}
+              <span className="rp-crumb">{crumb}</span>
             </div>
-            <div className="rp-topbar-right">
-              <span className={`rp-ticker${countdown <= 10 ? ' soon' : ''}`}>↻ in {countdown}s</span>
-              <button className={`rp-refresh-btn${isSpinning ? ' spinning' : ''}`} type="button" onClick={manualRefresh}>
-                <svg viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                Refresh
-              </button>
-            </div>
-          </div>
-
-          {/* CONTENT */}
-          <div className="rp-content">
-            <div className="rp-page-title">Reports</div>
-            <div className="rp-page-sub">PDF completion reports &amp; email delivery logs · auto-refreshes every {AUTO_REFRESH_SECS}s</div>
-
-            {/* TOP STATS */}
-            <div className="rp-stats">
-              <div className="rp-stat">
-                <div className="rp-stat-label">Total PDF Reports</div>
-                <div className="rp-stat-val">{totalPdfs}</div>
-                <div className="rp-stat-sub">All jobs</div>
-              </div>
-              <div className="rp-stat">
-                <div className="rp-stat-label">Valid Download Links</div>
-                <div className="rp-stat-val green">{validTokens}</div>
-                <div className="rp-stat-sub">Token not expired</div>
-              </div>
-              <div className="rp-stat">
-                <div className="rp-stat-label">Expired Links</div>
-                <div className="rp-stat-val red">{expiredTokens}</div>
-                <div className="rp-stat-sub">Need regeneration</div>
-              </div>
-              <div className="rp-stat">
-                <div className="rp-stat-label">Emails Sent</div>
-                <div className="rp-stat-val blue">{stats?.sent ?? '—'}</div>
-                <div className="rp-stat-sub">
-                  {stats ? `${stats.failed} failed` : 'Loading…'}
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION TABS */}
-            <div className="rp-tabs">
-              {REPORT_TABS.map(t => (
-                <button key={t.key} type="button"
-                  className={`rp-tab${activeTab === t.key ? ' active' : ''}`}
-                  onClick={() => setActiveTab(t.key)}
-                >
-                  {t.label}
+            {/* Only show the refresh ticker on the list view */}
+            {!viewingJobId && (
+              <div className="rp-topbar-right">
+                <span className={`rp-ticker${countdown <= 10 ? ' soon' : ''}`}>↻ in {countdown}s</span>
+                <button className={`rp-refresh-btn${isSpinning ? ' spinning' : ''}`} type="button" onClick={manualRefresh}>
+                  <svg viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                  Refresh
                 </button>
-              ))}
-            </div>
-
-            {/* ══ PDF REPORTS TAB ══ */}
-            {activeTab === 'pdf' && (
-              <>
-                {reportsErr && <div className="rp-error">{reportsErr}</div>}
-
-                <div className="rp-controls">
-                  <div className="rp-search-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    <input className="rp-search"
-                      placeholder="Search by job ID or generated by…"
-                      value={pdfSearch} onChange={e => setPdfSearch(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="rp-list-hdr">
-                  <span className="rp-list-title">{filteredReports.length} report{filteredReports.length !== 1 ? 's' : ''}</span>
-                  <span className="rp-list-meta">Newest First</span>
-                </div>
-
-                {reportsLoad ? (
-                  <div className="rp-loading"><div className="rp-spinner"/>Loading reports…</div>
-                ) : filteredReports.length === 0 ? (
-                  <div className="rp-empty">
-                    <div className="rp-empty-icon">📄</div>
-                    <div className="rp-empty-title">No PDF reports found</div>
-                    <div className="rp-empty-sub">Reports are generated automatically when a job is completed.</div>
-                  </div>
-                ) : (
-                  filteredReports.map(r => {
-                    const expired = isExpired(r.token_expires_at)
-                    const jobId   = r.job_id || r.job
-                    return (
-                      <div key={r.id} className="rp-card">
-                        {/* Icon */}
-                        <div className={`rp-card-icon${expired ? '' : ' valid'}`}>
-                          <svg viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round"
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                          </svg>
-                        </div>
-
-                        {/* Body */}
-                        <div className="rp-card-body">
-                          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3,flexWrap:'wrap'}}>
-                            <span className="rp-card-title">Job #{jobId} — PDF Report</span>
-                            <span className={`rp-badge ${expired ? 'red' : 'green'}`}>
-                              {expired ? 'Link Expired' : 'Link Valid'}
-                            </span>
-                            {r.includes_signature && (
-                              <span className="rp-badge green">✓ Signed</span>
-                            )}
-                          </div>
-                          <div className="rp-card-meta">
-                            <span className="rp-card-detail">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                              </svg>
-                              Generated {fmtDateTime(r.generated_at)}
-                            </span>
-                            {r.file_size_kb > 0 && (
-                              <span className="rp-card-detail">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
-                                </svg>
-                                {r.file_size_kb} KB
-                              </span>
-                            )}
-                            <span className="rp-card-detail">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                              </svg>
-                              Expires {fmtDate(r.token_expires_at)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="rp-card-actions">
-                          {r.report_file && (
-                            <a
-                              href={r.report_file}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{textDecoration:'none'}}
-                            >
-                              <button className="rp-btn-download" type="button">
-                                <svg viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                </svg>
-                                Download
-                              </button>
-                            </a>
-                          )}
-                          <button
-                            className="rp-btn-regen"
-                            type="button"
-                            onClick={() => handleRegen(jobId)}
-                            disabled={regenId === jobId}
-                          >
-                            {regenId === jobId ? 'Regenerating…' : 'Regenerate'}
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-              </>
-            )}
-
-            {/* ══ EMAIL LOGS TAB ══ */}
-            {activeTab === 'email' && (
-              <>
-                {emailsErr && <div className="rp-error">{emailsErr}</div>}
-
-                <div className="rp-controls">
-                  <div className="rp-search-wrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    <input className="rp-search"
-                      placeholder="Search by recipient, subject, type…"
-                      value={emailSearch} onChange={e => setEmailSearch(e.target.value)}
-                    />
-                  </div>
-                  <select className="rp-filter-select" value={emailFilter} onChange={e => setEmailFilter(e.target.value)}>
-                    <option value="all">All Statuses</option>
-                    <option value="sent">Sent</option>
-                    <option value="failed">Failed</option>
-                    <option value="pending">Pending</option>
-                    <option value="retrying">Retrying</option>
-                  </select>
-                </div>
-
-                <div className="rp-list-hdr">
-                  <span className="rp-list-title">{filteredEmails.length} email{filteredEmails.length !== 1 ? 's' : ''}</span>
-                  <span className="rp-list-meta">Newest First</span>
-                </div>
-
-                {emailsLoad ? (
-                  <div className="rp-loading"><div className="rp-spinner"/>Loading email logs…</div>
-                ) : filteredEmails.length === 0 ? (
-                  <div className="rp-empty">
-                    <div className="rp-empty-icon">📧</div>
-                    <div className="rp-empty-title">No email logs found</div>
-                    <div className="rp-empty-sub">
-                      {emailFilter !== 'all' ? `No ${emailFilter} emails found.` : 'No emails have been sent yet.'}
-                    </div>
-                  </div>
-                ) : (
-                  filteredEmails.map(e => {
-                    const sc = statusColor(e.status)
-                    const tc = typeColor(e.email_type)
-                    return (
-                      <div key={e.id} className="rp-email-card">
-                        {/* Icon */}
-                        <div className={`rp-email-icon ${sc}`}>
-                          <svg viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round"
-                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                          </svg>
-                        </div>
-
-                        {/* Body */}
-                        <div className="rp-email-body">
-                          <div className="rp-email-title-row">
-                            <span className="rp-email-to">{e.recipient_name || e.recipient_email}</span>
-                            <span className={`rp-badge ${sc}`}>
-                              {EMAIL_STATUS_CONFIG[e.status]?.label || e.status}
-                            </span>
-                            <span className={`rp-badge ${tc}`}>{typeLabel(e.email_type)}</span>
-                            {e.pdf_attached && <span className="rp-badge muted">📎 PDF</span>}
-                          </div>
-                          <div className="rp-email-subject">{e.subject || '—'}</div>
-                          <div className="rp-email-meta">
-                            <span className="rp-email-detail">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                              </svg>
-                              {e.recipient_email}
-                            </span>
-                            <span className="rp-email-detail">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                              </svg>
-                              {fmtDateTime(e.sent_at)}
-                            </span>
-                            {e.job_id && (
-                              <span className="rp-email-detail">Job #{e.job_id}</span>
-                            )}
-                            {e.error_message && (
-                              <span style={{fontSize:11.5,color:'var(--red)'}}>⚠ {e.error_message}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-              </>
-            )}
-
-            {/* ══ EMAIL STATS TAB ══ */}
-            {activeTab === 'stats' && (
-              <>
-                {statsLoad ? (
-                  <div className="rp-loading"><div className="rp-spinner"/>Loading stats…</div>
-                ) : !stats ? (
-                  <div className="rp-empty">
-                    <div className="rp-empty-icon">📊</div>
-                    <div className="rp-empty-title">Stats unavailable</div>
-                    <div className="rp-empty-sub">Could not load email statistics.</div>
-                  </div>
-                ) : (
-                  <div className="rp-stats-panel">
-                    {/* Delivery status */}
-                    <div className="rp-stats-section">
-                      <div className="rp-stats-section-title">Delivery Status</div>
-                      <div className="rp-stat-row">
-                        <span className="rp-stat-row-label">Total Emails</span>
-                        <span className="rp-stat-row-val">{stats.total}</span>
-                      </div>
-                      <div className="rp-stat-row">
-                        <span className="rp-stat-row-label">Sent</span>
-                        <span className="rp-stat-row-val green">{stats.sent}</span>
-                      </div>
-                      <div className="rp-stat-row">
-                        <span className="rp-stat-row-label">Failed</span>
-                        <span className="rp-stat-row-val red">{stats.failed}</span>
-                      </div>
-                      <div className="rp-stat-row">
-                        <span className="rp-stat-row-label">Pending</span>
-                        <span className="rp-stat-row-val amber">{stats.pending}</span>
-                      </div>
-                      <div className="rp-stat-row">
-                        <span className="rp-stat-row-label">Retrying</span>
-                        <span className="rp-stat-row-val blue">{stats.retrying}</span>
-                      </div>
-                      {stats.total > 0 && (
-                        <div className="rp-stat-row">
-                          <span className="rp-stat-row-label">Success Rate</span>
-                          <span className="rp-stat-row-val green">
-                            {Math.round((stats.sent / stats.total) * 100)}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* By type */}
-                    <div className="rp-stats-section">
-                      <div className="rp-stats-section-title">By Email Type</div>
-                      {stats.by_type && Object.entries(stats.by_type).map(([key, count]) => (
-                        <div key={key} className="rp-stat-row">
-                          <span className="rp-stat-row-label">{typeLabel(key)}</span>
-                          <span className={`rp-stat-row-val ${typeColor(key)}`}>{count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
+              </div>
             )}
           </div>
+          {children}
         </div>
 
         {/* TOAST */}
@@ -863,5 +582,329 @@ export default function AdminReportsPage() {
         )}
       </div>
     </>
+  )
+
+  // ── DETAIL VIEW: render ServiceReport inside the shell ────────────────────
+  if (viewingJobId !== null) {
+    return (
+      <Shell crumb={
+        // FIX: Breadcrumb "Reports" is clickable to go back to list
+        <>
+          Admin &nbsp;›&nbsp;
+          <span className="rp-crumb-link" onClick={() => setViewingJobId(null)}>Reports</span>
+          &nbsp;›&nbsp; <span>Job #{viewingJobId}</span>
+        </>
+      }>
+        <div className="rp-content" style={{ padding: '16px 24px' }}>
+          {/*
+            FIX: Pass jobId and onClose to ServiceReport.
+            ServiceReport will now fetch real data for this specific job
+            and show the actual customer name — not hardcoded DEMO_DATA.
+          */}
+          <ServiceReport
+            jobId={viewingJobId}
+            onClose={() => setViewingJobId(null)}
+          />
+        </div>
+      </Shell>
+    )
+  }
+
+  // ── LIST VIEW ─────────────────────────────────────────────────────────────
+  return (
+    <Shell crumb={<>Admin &nbsp;›&nbsp; <span>Reports</span></>}>
+      <div className="rp-content">
+        <div className="rp-page-title">Reports</div>
+        <div className="rp-page-sub">PDF completion reports &amp; email delivery logs · auto-refreshes every {AUTO_REFRESH_SECS}s</div>
+
+        {/* TOP STATS */}
+        <div className="rp-stats">
+          <div className="rp-stat">
+            <div className="rp-stat-label">Total PDF Reports</div>
+            <div className="rp-stat-val">{totalPdfs}</div>
+            <div className="rp-stat-sub">All jobs</div>
+          </div>
+          <div className="rp-stat">
+            <div className="rp-stat-label">Valid Download Links</div>
+            <div className="rp-stat-val green">{validTokens}</div>
+            <div className="rp-stat-sub">Token not expired</div>
+          </div>
+          <div className="rp-stat">
+            <div className="rp-stat-label">Expired Links</div>
+            <div className="rp-stat-val red">{expiredTokens}</div>
+            <div className="rp-stat-sub">Need regeneration</div>
+          </div>
+          <div className="rp-stat">
+            <div className="rp-stat-label">Emails Sent</div>
+            <div className="rp-stat-val blue">{stats?.sent ?? '—'}</div>
+            <div className="rp-stat-sub">{stats ? `${stats.failed} failed` : 'Loading…'}</div>
+          </div>
+        </div>
+
+        {/* SECTION TABS */}
+        <div className="rp-tabs">
+          {REPORT_TABS.map(t => (
+            <button key={t.key} type="button"
+              className={`rp-tab${activeTab === t.key ? ' active' : ''}`}
+              onClick={() => setActiveTab(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ══ PDF REPORTS TAB ══ */}
+        {activeTab === 'pdf' && (
+          <>
+            {reportsErr && <div className="rp-error">{reportsErr}</div>}
+
+            <div className="rp-controls">
+              <div className="rp-search-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input className="rp-search"
+                  placeholder="Search by job ID, customer, or generated by…"
+                  value={pdfSearch} onChange={e => setPdfSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="rp-list-hdr">
+              <span className="rp-list-title">{filteredReports.length} report{filteredReports.length !== 1 ? 's' : ''}</span>
+              <span className="rp-list-meta">Newest First</span>
+            </div>
+
+            {reportsLoad ? (
+              <div className="rp-loading"><div className="rp-spinner"/>Loading reports…</div>
+            ) : filteredReports.length === 0 ? (
+              <div className="rp-empty">
+                <div className="rp-empty-icon">📄</div>
+                <div className="rp-empty-title">No PDF reports found</div>
+                <div className="rp-empty-sub">Reports are generated automatically when a job is completed.</div>
+              </div>
+            ) : (
+              filteredReports.map(r => {
+                const expired = isExpired(r.token_expires_at)
+                const jobId   = r.job_id ?? r.job
+                // FIX: Show customer name in the card title if the API returns it
+                const custName = r.customer_name || r.customer?.name || ''
+                return (
+                  <div key={r.id} className="rp-card">
+                    <div className={`rp-card-icon${expired ? '' : ' valid'}`}>
+                      <svg viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                      </svg>
+                    </div>
+
+                    <div className="rp-card-body">
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3,flexWrap:'wrap'}}>
+                        {/* FIX: Card title shows customer name when available */}
+                        <span className="rp-card-title">
+                          Job #{jobId}{custName ? ` — ${custName}` : ' — Service Report'}
+                        </span>
+                        <span className={`rp-badge ${expired ? 'red' : 'green'}`}>
+                          {expired ? 'Link Expired' : 'Link Valid'}
+                        </span>
+                        {r.includes_signature && (
+                          <span className="rp-badge green">✓ Signed</span>
+                        )}
+                      </div>
+                      <div className="rp-card-meta">
+                        <span className="rp-card-detail">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          Generated {fmtDateTime(r.generated_at)}
+                        </span>
+                        {r.file_size_kb > 0 && (
+                          <span className="rp-card-detail">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                            </svg>
+                            {r.file_size_kb} KB
+                          </span>
+                        )}
+                        <span className="rp-card-detail">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                          </svg>
+                          Expires {fmtDate(r.token_expires_at)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="rp-card-actions">
+                      {/* FIX: Opens the real ServiceReport with live API data */}
+                      <button className="rp-btn-view" type="button"
+                        onClick={() => setViewingJobId(jobId)}>
+                        <svg viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        View Report
+                      </button>
+
+                      {r.report_file && (
+                        <a href={r.report_file} target="_blank" rel="noopener noreferrer"
+                          className="rp-btn-download">
+                          <svg viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                          </svg>
+                          PDF
+                        </a>
+                      )}
+
+                      <button className="rp-btn-regen" type="button"
+                        onClick={() => handleRegen(jobId)}
+                        disabled={regenId === jobId}>
+                        {regenId === jobId ? 'Regenerating…' : 'Regenerate'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </>
+        )}
+
+        {/* ══ EMAIL LOGS TAB ══ */}
+        {activeTab === 'email' && (
+          <>
+            {emailsErr && <div className="rp-error">{emailsErr}</div>}
+
+            <div className="rp-controls">
+              <div className="rp-search-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input className="rp-search"
+                  placeholder="Search by recipient, subject, type…"
+                  value={emailSearch} onChange={e => setEmailSearch(e.target.value)}
+                />
+              </div>
+              <select className="rp-filter-select" value={emailFilter} onChange={e => setEmailFilter(e.target.value)}>
+                <option value="all">All Statuses</option>
+                <option value="sent">Sent</option>
+                <option value="failed">Failed</option>
+                <option value="pending">Pending</option>
+                <option value="retrying">Retrying</option>
+              </select>
+            </div>
+
+            <div className="rp-list-hdr">
+              <span className="rp-list-title">{filteredEmails.length} email{filteredEmails.length !== 1 ? 'emails' : ''}</span>
+              <span className="rp-list-meta">Newest First</span>
+            </div>
+
+            {emailsLoad ? (
+              <div className="rp-loading"><div className="rp-spinner"/>Loading email logs…</div>
+            ) : filteredEmails.length === 0 ? (
+              <div className="rp-empty">
+                <div className="rp-empty-icon">📧</div>
+                <div className="rp-empty-title">No email logs found</div>
+                <div className="rp-empty-sub">
+                  {emailFilter !== 'all' ? `No ${emailFilter} emails found.` : 'No emails have been sent yet.'}
+                </div>
+              </div>
+            ) : (
+              filteredEmails.map(e => {
+                const sc = statusColor(e.status)
+                const tc = typeColor(e.email_type)
+                return (
+                  <div key={e.id} className="rp-email-card">
+                    <div className={`rp-email-icon ${sc}`}>
+                      <svg viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                      </svg>
+                    </div>
+                    <div className="rp-email-body">
+                      <div className="rp-email-title-row">
+                        <span className="rp-email-to">{e.recipient_name || e.recipient_email}</span>
+                        <span className={`rp-badge ${sc}`}>{EMAIL_STATUS_CONFIG[e.status]?.label || e.status}</span>
+                        <span className={`rp-badge ${tc}`}>{typeLabel(e.email_type)}</span>
+                        {e.pdf_attached && <span className="rp-badge muted">📎 PDF</span>}
+                      </div>
+                      <div className="rp-email-subject">{e.subject || '—'}</div>
+                      <div className="rp-email-meta">
+                        <span className="rp-email-detail">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                          </svg>
+                          {e.recipient_email}
+                        </span>
+                        <span className="rp-email-detail">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          {fmtDateTime(e.sent_at)}
+                        </span>
+                        {e.job_id && <span className="rp-email-detail">Job #{e.job_id}</span>}
+                        {e.error_message && (
+                          <span style={{fontSize:11.5,color:'var(--red)'}}>⚠ {e.error_message}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </>
+        )}
+
+        {/* ══ EMAIL STATS TAB ══ */}
+        {activeTab === 'stats' && (
+          <>
+            {statsLoad ? (
+              <div className="rp-loading"><div className="rp-spinner"/>Loading stats…</div>
+            ) : !stats ? (
+              <div className="rp-empty">
+                <div className="rp-empty-icon">📊</div>
+                <div className="rp-empty-title">Stats unavailable</div>
+                <div className="rp-empty-sub">Could not load email statistics.</div>
+              </div>
+            ) : (
+              <div className="rp-stats-panel">
+                <div className="rp-stats-section">
+                  <div className="rp-stats-section-title">Delivery Status</div>
+                  {[
+                    { label: 'Total Emails',  val: stats.total,    color: ''       },
+                    { label: 'Sent',          val: stats.sent,     color: 'green'  },
+                    { label: 'Failed',        val: stats.failed,   color: 'red'    },
+                    { label: 'Pending',       val: stats.pending,  color: 'amber'  },
+                    { label: 'Retrying',      val: stats.retrying, color: 'blue'   },
+                  ].map(row => (
+                    <div key={row.label} className="rp-stat-row">
+                      <span className="rp-stat-row-label">{row.label}</span>
+                      <span className={`rp-stat-row-val ${row.color}`}>{row.val}</span>
+                    </div>
+                  ))}
+                  {stats.total > 0 && (
+                    <div className="rp-stat-row">
+                      <span className="rp-stat-row-label">Success Rate</span>
+                      <span className="rp-stat-row-val green">
+                        {Math.round((stats.sent / stats.total) * 100)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="rp-stats-section">
+                  <div className="rp-stats-section-title">By Email Type</div>
+                  {stats.by_type && Object.entries(stats.by_type).map(([key, count]) => (
+                    <div key={key} className="rp-stat-row">
+                      <span className="rp-stat-row-label">{typeLabel(key)}</span>
+                      <span className={`rp-stat-row-val ${typeColor(key)}`}>{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Shell>
   )
 }
