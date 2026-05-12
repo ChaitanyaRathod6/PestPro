@@ -2,38 +2,21 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # These match what your React frontend calls:
+    # /api/reports/pdf/
+    # /api/reports/pdf/job/<id>/regenerate/
+    # /api/reports/emails/
+    # /api/reports/emails/stats/
 
-    # ─── PDF Reports ────────────────────────────────────────────────
-    path('reports/',
-         views.PDFReportListView.as_view(),
-         name='report-list'),
+    path('pdf/',                              views.PDFReportListView.as_view(),    name='report-list'),
+    path('pdf/job/<int:job_id>/',             views.PDFReportByJobView.as_view(),   name='report-by-job'),
+    path('pdf/job/<int:job_id>/regenerate/',  views.PDFRegenerateView.as_view(),    name='report-regenerate'),
+    path('pdf/download/',                     views.PDFDownloadView.as_view(),      name='report-download'),
+    path('pdf/<int:pk>/',                     views.PDFReportDetailView.as_view(),  name='report-detail'),
 
-    path('reports/<int:pk>/',
-         views.PDFReportDetailView.as_view(),
-         name='report-detail'),
-
-    path('reports/job/<int:job_id>/',
-         views.PDFReportByJobView.as_view(),
-         name='report-by-job'),
-
-    path('reports/job/<int:job_id>/regenerate/',
-         views.PDFRegenerateView.as_view(),
-         name='report-regenerate'),
-
-    path('reports/download/',
-         views.PDFDownloadView.as_view(),
-         name='report-download'),
-
-    # ─── Email Logs ─────────────────────────────────────────────────
-    path('emails/',
-         views.EmailLogListView.as_view(),
-         name='email-log-list'),
-
-    path('emails/<int:pk>/',
-         views.EmailLogDetailView.as_view(),
-         name='email-log-detail'),
-
-    path('emails/stats/',
-         views.EmailLogStatsView.as_view(),
-         name='email-log-stats'),
+    # emails/stats/ MUST be before emails/<int:pk>/ — otherwise Django
+    # tries to cast "stats" as an integer and returns 404
+    path('emails/',                           views.EmailLogListView.as_view(),     name='email-log-list'),
+    path('emails/stats/',                     views.EmailLogStatsView.as_view(),    name='email-log-stats'),
+    path('emails/<int:pk>/',                  views.EmailLogDetailView.as_view(),   name='email-log-detail'),
 ]

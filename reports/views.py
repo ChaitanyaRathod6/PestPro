@@ -129,52 +129,35 @@ class PDFDownloadView(APIView):
 
 
 class PDFRegenerateView(APIView):
-    """
-    Admin or Supervisor manually regenerates a PDF report (UC-14).
-    Creates a new download token and updates the report file.
-    PDF-07: New PDF created, existing PDFReport updated.
-    """
     permission_classes = [IsAdminOrSupervisor]
 
     def post(self, request, job_id):
         try:
             job = ServiceJob.objects.get(pk=job_id)
         except ServiceJob.DoesNotExist:
-            return Response(
-                {'error': 'Job not found.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({'error': 'Job not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Job must be completed to generate PDF
         if job.status not in ['completed', 'report_sent']:
             return Response(
-                {'error': 'Job must be completed before generating PDF.'},
+                {'error': 'Job must be completed before generating a PDF.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Get or create PDF report record
-        report, created = PDFReport.objects.get_or_create(
-            job=job,
-            defaults={'generated_by': request.user}
-        )
+        # Queue the actual Celery task — this is what was missing before
+        from .tasks import generate_pdf_report_task
+        generate_pdf_report_task.delay(job_id)
 
-        if not created:
-            # Regenerate — update generated_by and reset token
-            import uuid
-            from datetime import timedelta
-            report.generated_by      = request.user
-            report.download_token    = uuid.uuid4()
-            report.token_expires_at  = timezone.now() + timedelta(days=7)
-            report.save()
+        # Return the current report if it exists
+        try:
+            report = PDFReport.objects.get(job=job)
+            report_data = PDFReportSerializer(report, context={'request': request}).data
+        except PDFReport.DoesNotExist:
+            report_data = None
 
         return Response({
-            'message': 'PDF report regenerated successfully.',
-            'report':  PDFReportSerializer(
-                report,
-                context={'request': request}
-            ).data
+            'message': 'PDF regeneration queued. Refresh in a few seconds.',
+            'report':  report_data,
         }, status=status.HTTP_200_OK)
-
 
 # =============================================================================
 # EMAIL LOG VIEWS

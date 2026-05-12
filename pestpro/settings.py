@@ -48,12 +48,16 @@ INSTALLED_APPS = [
     'jobs',
     'observations',
     'alerts',
-    'reports',
+    # 'reports',
     'portal',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
+    'reports.apps.ReportsConfig', 
+    "redis",
+    'django_celery_results',
+    
 ]
 
 MIDDLEWARE = [
@@ -172,3 +176,8 @@ LOGIN_URL = '/api-auth/login/'
 
 TIME_ZONE = 'Asia/Kolkata'   
 USE_TZ = True
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
