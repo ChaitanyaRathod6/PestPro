@@ -233,14 +233,14 @@ class JobCompleteView(APIView):
         if serializer.is_valid():
             serializer.save()
 
-            # # ── PDF GENERATION TRIGGER ──────────────────────────
-            # try:
-            #     from reports.tasks import generate_pdf_report_task
-            #     generate_pdf_report_task.delay(job.pk)
-            # except Exception as e:
-            #     import logging
-            #     logging.getLogger(__name__).error(f'[PDF] Failed to queue for job {job.pk}: {e}')
-            # # ────────────────────────────────────────────────────
+            # ── PDF GENERATION TRIGGER ──────────────────────────
+            try:
+                from reports.tasks import generate_pdf_report_task
+                generate_pdf_report_task.delay(job.pk)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f'[PDF] Failed to queue for job {job.pk}: {e}')
+            # ────────────────────────────────────────────────────
 
             return Response({
                 'message': 'Job completed successfully. PDF report will be generated.',

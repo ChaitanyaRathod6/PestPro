@@ -398,7 +398,7 @@ export default function AdminReportsPage() {
   const fetchReports = useCallback(async (silent = false) => {
     if (!silent) setReportsErr('')
     try {
-      const res = await api.get('/reports/pdf/')
+      const res = await api.get('/pdf/')
       if (!isMounted.current) return
       const list = res.data?.results ?? res.data ?? []
       setReports(Array.isArray(list) ? list : [])
@@ -477,7 +477,7 @@ export default function AdminReportsPage() {
   const handleRegen = async (jobId) => {
     setRegenId(jobId)
     try {
-      await api.post(`/reports/pdf/${jobId}/regenerate/`)
+      await api.post(`/pdf/${jobId}/regenerate/`)
       showToast('PDF report regenerated successfully.')
       // FIX: Always re-fetch the full list after regeneration so the new
       //      report entry appears immediately without a manual page refresh.

@@ -1,345 +1,414 @@
-// REPLACE with these:
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmt(dateStr, opts = {}) {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
-  const date = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", ...opts });
+  const date = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
   const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
   return opts.timeOnly ? time : opts.dateOnly ? date : `${date}, ${time}`;
 }
-function title(str) {
+function cap(str) {
   if (!str) return "—";
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  return str.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
+function yesNo(val) { return val ? "Yes" : "No"; }
 
-// ─── CSS ──────────────────────────────────────────────────────────────────────
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#1a6b3c;--green-dark:#1a4d2e;--green-light:#edf6f1;
+  --ink:#1a2e1a;--muted:#7a8c7a;--pale:#a0b0a0;
+  --border:#e8ebe8;--bg:#f0f2f0;--white:#fff;
+  --red:#e74c3c;--amber:#e6a817;--blue:#3b82f6;
+}
+body{background:var(--bg);}
+.rr-wrap{font-family:'DM Serif Display',serif;max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+.rr-back{display:inline-flex;align-items:center;gap:6px;background:var(--white);
+  border:1.5px solid var(--border);border-radius:9px;padding:8px 16px;
+  font-family:'DM Serif Display',serif;font-size:13px;color:var(--muted);
+  cursor:pointer;margin-bottom:20px;transition:background .15s;}
+.rr-back:hover{background:#e2e8e2;color:var(--ink);}
+.rr-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+.rr-card{background:var(--white);border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,.07);overflow:hidden;margin-bottom:20px;}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* HEADER */
+.rr-header{background:var(--green);padding:28px 32px;display:flex;justify-content:space-between;align-items:flex-start;}
+.rr-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.rr-logo-box{width:34px;height:34px;background:rgba(255,255,255,.2);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;}
+.rr-logo-box svg{width:18px;height:18px;fill:white;}
+.rr-company{font-size:20px;color:#fff;}
+.rr-company-sub{font-size:11px;color:rgba(255,255,255,.7);}
+.rr-header-right{text-align:right;}
+.rr-report-title{font-size:24px;color:#fff;margin-bottom:6px;}
+.rr-report-meta{font-size:11px;color:rgba(255,255,255,.75);line-height:2;}
+.rr-report-meta span{color:#fff;}
 
-  :root {
-    --green:       #1a6b3c;
-    --green-dark:  #1a4d2e;
-    --green-light: #edf6f1;
-    --ink:         #1a2e1a;
-    --muted:       #7a8c7a;
-    --pale:        #a0b0a0;
-    --border:      #e8ebe8;
-    --bg:          #f0f2f0;
-    --white:       #fff;
-    --red:         #e74c3c;
-    --amber:       #e6a817;
-    --blue:        #3b82f6;
-  }
+/* STATUS CHIP */
+.rr-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:20px;font-size:11px;}
+.rr-chip.completed,.rr-chip.report_sent{background:var(--green-light);color:var(--green);}
+.rr-chip.in_progress{background:#eff6ff;color:var(--blue);}
+.rr-chip.scheduled{background:#fff8ec;color:var(--amber);}
+.rr-chip-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
 
-  .report-root {
-    font-family: 'DM Serif Display', serif;
-    font-size: 13px;
-    color: var(--ink);
-    background: var(--white);
-    padding: 36px 44px;
-    line-height: 1.5;
-    max-width: 860px;
-    margin: 0 auto;
-  }
+/* SUMMARY GRID */
+.rr-summary{padding:20px 32px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;border-bottom:1px solid var(--border);}
+.rr-sum-cell{background:var(--bg);border-radius:10px;padding:12px 14px;}
+.rr-sum-label{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--pale);margin-bottom:5px;}
+.rr-sum-val{font-size:13.5px;color:var(--ink);}
+.rr-sum-val.green{color:var(--green);}
+.rr-sum-val.amber{color:var(--amber);}
+.rr-sum-val.red{color:var(--red);}
 
-  /* BACK BUTTON */
-  .report-back-bar { max-width:860px; margin: 0 auto 16px; }
-  .report-back-btn {
-    background: var(--bg); border: 1.5px solid var(--border); border-radius: 9px;
-    padding: 8px 16px; font-family: 'DM Serif Display', serif; font-size: 13px;
-    color: var(--muted); cursor: pointer; display: inline-flex; align-items: center;
-    gap: 6px; transition: background .15s, color .15s;
-  }
-  .report-back-btn:hover { background: #e2e8e2; color: var(--ink); }
-  .report-back-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+/* SECTION */
+.rr-section{padding:24px 32px;border-bottom:1px solid var(--border);}
+.rr-section:last-child{border-bottom:none;}
+.rr-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--pale);
+  margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.rr-section-title::after{content:'';flex:1;height:1px;background:var(--border);}
 
-  /* LOADING / ERROR */
-  .report-loading { display: flex; align-items: center; justify-content: center; padding: 80px 20px; color: var(--pale); font-size: 14px; gap: 12px; }
-  .report-spinner { width: 22px; height: 22px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: reportSpin .8s linear infinite; }
-  @keyframes reportSpin { to { transform: rotate(360deg); } }
-  .report-error-box { max-width: 860px; margin: 32px auto; background: #fde8e8; color: var(--red); padding: 16px 20px; border-radius: 12px; font-size: 13px; }
+/* INFO ROWS */
+.rr-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.rr-info-row{display:flex;justify-content:space-between;align-items:flex-start;
+  padding:9px 0;border-bottom:1px solid #f5f7f5;font-size:12.5px;gap:16px;}
+.rr-info-row:last-child{border-bottom:none;}
+.rr-info-row.full{grid-column:1/-1;}
+.rr-info-label{color:var(--muted);flex-shrink:0;}
+.rr-info-val{color:var(--ink);text-align:right;}
 
-  /* HEADER */
-  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; padding-bottom:20px; border-bottom:2px solid var(--green); }
-  .logo-row { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
-  .logo-box { width:32px; height:32px; background:var(--green); border-radius:8px; display:flex; align-items:center; justify-content:center; }
-  .logo-box svg { width:18px; height:18px; fill:white; }
-  .company-name { font-size:20px; color:var(--ink); }
-  .company-sub { font-size:11px; color:var(--muted); margin-top:2px; }
-  .header-right { text-align:right; }
-  .report-title { font-size:22px; color:var(--green); margin-bottom:4px; }
-  .report-meta { font-size:11px; color:var(--pale); line-height:1.8; }
-  .report-meta span { color:var(--muted); }
+/* OBSERVATION CARD */
+.rr-obs{border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden;}
+.rr-obs:last-child{margin-bottom:0;}
+.rr-obs-head{background:var(--green);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;}
+.rr-obs-head-title{font-size:14px;color:#fff;}
+.rr-obs-head-badge{font-size:10px;background:rgba(255,255,255,.2);color:#fff;padding:2px 10px;border-radius:20px;}
+.rr-obs-body{padding:16px 18px;}
+.rr-obs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}
+.rr-obs-field-label{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--pale);margin-bottom:3px;}
+.rr-obs-field-val{font-size:12.5px;color:var(--ink);}
+.rr-obs-field-val.yes{color:var(--green);}
+.rr-obs-field-val.no{color:var(--red);}
+.rr-obs-field-val.warn{color:var(--amber);}
+.rr-detail-box{background:var(--bg);border-radius:8px;padding:12px 14px;margin-top:10px;}
+.rr-detail-title{font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:var(--pale);margin-bottom:10px;}
+.rr-detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.rr-detail-row{font-size:12px;display:flex;justify-content:space-between;
+  padding:6px 0;border-bottom:1px solid var(--border);}
+.rr-detail-row:last-child{border-bottom:none;}
+.rr-detail-key{color:var(--muted);}
+.rr-detail-val{color:var(--ink);text-align:right;}
+.rr-detail-val.yes{color:var(--green);}
+.rr-detail-val.no{color:var(--red);}
+.rr-obs-photo{width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-top:12px;cursor:pointer;}
+.rr-obs-notes{background:#fff8ec;border-left:3px solid var(--amber);
+  padding:10px 14px;border-radius:0 8px 8px 0;font-size:12px;color:var(--muted);
+  margin-top:10px;line-height:1.6;}
+.rr-severity{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;}
+.rr-severity.high,.rr-severity.severe{background:#fde8e8;color:var(--red);}
+.rr-severity.medium,.rr-severity.moderate{background:#fff8ec;color:var(--amber);}
+.rr-severity.low,.rr-severity.minor{background:var(--green-light);color:var(--green);}
+.rr-severity.none{background:var(--bg);color:var(--muted);}
 
-  /* SECTION TITLE */
-  .section-title { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--pale); margin-bottom:10px; margin-top:24px; display:flex; align-items:center; gap:8px; }
-  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+/* ALERTS */
+.rr-alert{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;
+  border-radius:10px;background:#fff8ec;border-left:3px solid var(--amber);margin-bottom:8px;}
+.rr-alert-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:4px;}
+.rr-alert-title{font-size:13px;color:var(--ink);margin-bottom:2px;}
+.rr-alert-msg{font-size:12px;color:var(--muted);}
+.rr-alert-type{font-size:10px;color:var(--amber);margin-left:auto;flex-shrink:0;}
 
-  /* META GRID */
-  .meta-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:8px; }
-  .meta-cell { background:var(--bg); border-radius:10px; padding:10px 14px; }
-  .meta-label { font-size:9px; text-transform:uppercase; letter-spacing:.7px; color:var(--pale); margin-bottom:4px; }
-  .meta-value { font-size:13px; color:var(--ink); }
-  .meta-value.muted { color:var(--muted); }
-  .meta-value.green { color:var(--green); }
-  .meta-value.amber { color:var(--amber); }
-  .meta-value.red   { color:var(--red); }
-  .meta-value.small { font-size:10px; }
+/* SIGNATURE */
+.rr-sig-box{border:1.5px solid var(--border);border-radius:12px;padding:20px 24px;
+  display:flex;justify-content:space-between;align-items:center;gap:20px;}
+.rr-sig-label{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--pale);margin-bottom:8px;}
+.rr-sig-img{max-height:80px;max-width:280px;border:1px solid var(--border);
+  border-radius:8px;padding:8px;background:#fafbfa;}
+.rr-sig-verified{background:var(--green-light);color:var(--green);padding:8px 20px;
+  border-radius:20px;font-size:12px;white-space:nowrap;}
+.rr-sig-date{font-size:11px;color:var(--muted);margin-top:4px;}
 
-  /* INFO CARD */
-  .info-card { border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:14px; }
-  .info-card-header { background:var(--green-light); padding:10px 16px; font-size:11px; color:var(--green); text-transform:uppercase; letter-spacing:.7px; }
-  .info-card-body { padding:14px 16px; }
-  .info-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
-  .info-row:last-child { border-bottom:none; }
-  .info-row-label { color:var(--muted); }
-  .info-row-val { color:var(--ink); text-align:right; }
+/* DOWNLOAD */
+.rr-download-bar{display:flex;align-items:center;justify-content:space-between;
+  background:var(--green-light);border-radius:10px;padding:14px 18px;margin-bottom:8px;}
+.rr-download-info{font-size:13px;color:var(--green);}
+.rr-download-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.rr-download-btn{background:var(--green);color:#fff;border:none;border-radius:8px;
+  padding:9px 20px;font-family:'DM Serif Display',serif;font-size:13px;
+  cursor:pointer;display:flex;align-items:center;gap:6px;text-decoration:none;}
+.rr-download-btn:hover{background:#155a32;}
+.rr-download-btn svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;}
 
-  /* OBS CARD */
-  .obs-card { border:1px solid var(--border); border-radius:12px; margin-bottom:12px; overflow:hidden; }
-  .obs-header { background:var(--green); color:white; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; }
-  .obs-header-title { font-size:13px; }
-  .obs-header-badge { font-size:10px; background:rgba(255,255,255,.2); padding:2px 10px; border-radius:20px; }
-  .obs-body { padding:14px 16px; }
-  .obs-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px; }
-  .obs-field-label { font-size:9px; text-transform:uppercase; letter-spacing:.6px; color:var(--pale); margin-bottom:3px; }
-  .obs-field-val { font-size:12.5px; color:var(--ink); }
-  .obs-notes { background:var(--bg); border-radius:8px; padding:10px 14px; font-size:12px; color:var(--muted); line-height:1.6; margin-top:8px; margin-bottom:8px; }
-  .obs-notes-label { font-size:9px; text-transform:uppercase; letter-spacing:.6px; color:var(--pale); margin-bottom:4px; }
+/* FOOTER */
+.rr-footer{padding:20px 32px;display:flex;justify-content:space-between;
+  align-items:center;background:var(--bg);}
+.rr-footer-brand{font-size:14px;color:var(--green);margin-bottom:3px;}
+.rr-footer-sub{font-size:11px;color:var(--pale);}
+.rr-footer-right{text-align:right;font-size:11px;color:var(--pale);}
 
-  /* SIGNATURE */
-  .signature-box { border:1.5px solid var(--border); border-radius:12px; padding:18px 20px; display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
-  .signature-label { font-size:10px; text-transform:uppercase; letter-spacing:.7px; color:var(--pale); margin-bottom:6px; }
-  .signature-name { font-size:16px; color:var(--ink); font-style:italic; margin-bottom:3px; }
-  .signature-date { font-size:11px; color:var(--muted); }
-  .signature-verified { background:var(--green-light); color:var(--green); padding:6px 16px; border-radius:20px; font-size:12px; }
+/* NO DATA */
+.rr-empty{text-align:center;padding:24px;color:var(--pale);font-size:13px;
+  font-style:italic;background:var(--bg);border-radius:10px;}
 
-  /* ALERT */
-  .alert-row { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:10px; background:#fff8ec; border-left:3px solid var(--amber); margin-bottom:8px; font-size:12.5px; }
-  .alert-dot { width:8px; height:8px; border-radius:50%; background:var(--amber); flex-shrink:0; }
-  .alert-text { color:var(--ink); flex:1; }
-  .alert-type { font-size:10px; color:var(--amber); }
+/* LOADING / ERROR */
+.rr-loading{display:flex;align-items:center;justify-content:center;
+  padding:80px;color:var(--pale);font-size:14px;gap:12px;}
+.rr-spinner{width:22px;height:22px;border:2px solid var(--border);
+  border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.rr-error{max-width:900px;margin:32px auto;background:#fde8e8;
+  color:var(--red);padding:16px 20px;border-radius:12px;font-size:13px;}
 
-  /* NO DATA */
-  .no-data { text-align:center; padding:24px; color:var(--pale); font-size:13px; font-style:italic; background:var(--bg); border-radius:10px; }
+/* LIGHTBOX */
+.rr-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:900;
+  display:flex;align-items:center;justify-content:center;padding:20px;cursor:pointer;}
+.rr-lightbox img{max-width:100%;max-height:90vh;border-radius:8px;}
 
-  /* FOOTER */
-  .footer { margin-top:36px; padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
-  .footer-left, .footer-right { font-size:11px; color:var(--pale); line-height:1.8; }
-  .footer-right { text-align:right; }
-  .footer-brand { font-size:13px; color:var(--green); margin-bottom:2px; }
-
-  /* PRINT */
-  @media print {
-    .report-back-bar { display: none !important; }
-    .report-root { padding:20px; }
-  }
+@media(max-width:700px){
+  .rr-header{padding:20px;flex-direction:column;gap:16px;}
+  .rr-header-right{text-align:left;}
+  .rr-summary{grid-template-columns:1fr 1fr;padding:16px;}
+  .rr-section{padding:16px;}
+  .rr-obs-grid,.rr-detail-grid{grid-template-columns:1fr 1fr;}
+  .rr-info-grid{grid-template-columns:1fr;}
+}
+@media print{
+  .rr-back,.rr-download-bar{display:none!important;}
+  body{background:white;}
+}
 `;
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-function SectionTitle({ children }) {
-  return <div className="section-title">{children}</div>;
-}
-
-function MetaCell({ label, value, color, small }) {
+function SField({ label, value, cls }) {
   return (
-    <div className="meta-cell">
-      <div className="meta-label">{label}</div>
-      <div className={`meta-value ${color || ""} ${small ? "small" : ""}`}>{value || "—"}</div>
+    <div>
+      <div className="rr-obs-field-label">{label}</div>
+      <div className={`rr-obs-field-val ${cls || ""}`}>{value ?? "—"}</div>
     </div>
   );
 }
 
-function InfoCard({ title: cardTitle, rows }) {
+function DRow({ label, value, cls }) {
   return (
-    <div className="info-card">
-      <div className="info-card-header">{cardTitle}</div>
-      <div className="info-card-body">
-        {rows.filter(Boolean).map((row, i) => (
-          <div className="info-row" key={i}>
-            <span className="info-row-label">{row.label}</span>
-            <span className="info-row-val">{row.value || "—"}</span>
-          </div>
-        ))}
-      </div>
+    <div className="rr-detail-row">
+      <span className="rr-detail-key">{label}</span>
+      <span className={`rr-detail-val ${cls || ""}`}>{value ?? "—"}</span>
     </div>
   );
 }
 
-function ObsNotes({ label, children }) {
-  return (
-    <div className="obs-notes">
-      <div className="obs-notes-label">{label}</div>
-      {children}
-    </div>
-  );
-}
+function ObsCard({ obs, index, onPhoto }) {
+  const cat = obs.observation_category;
+  const r = obs.rodent_detail;
+  const f = obs.flying_insect_detail;
+  const c = obs.cockroach_detail;
+  const t = obs.termite_detail;
+  const m = obs.mosquito_detail;
+  const g = obs.general_detail;
 
-function ObservationCard({ obs, index }) {
+  const photo = r?.photo_evidence || f?.photo_evidence ||
+    c?.photo_evidence || t?.photo_evidence ||
+    m?.photo_evidence || g?.photo_evidence;
+
+  const remarks = r?.technician_remarks || f?.technician_remarks ||
+    c?.technician_remarks || t?.technician_remarks ||
+    m?.technician_remarks || g?.technician_remarks || obs.notes;
+
   return (
-    <div className="obs-card">
-      <div className="obs-header">
-        <span className="obs-header-title">
-          Observation #{index + 1}{obs.pest_type ? ` — ${obs.pest_type}` : ""}
+    <div className="rr-obs">
+      <div className="rr-obs-head">
+        <span className="rr-obs-head-title">
+          Observation #{index + 1} — {cap(cat)}
+          {obs.pest_type && obs.pest_type !== cap(cat) ? ` (${obs.pest_type})` : ""}
         </span>
-        <span className="obs-header-badge">{title(obs.observation_type) || "General"}</span>
+        <span className="rr-obs-head-badge">
+          <span className={`rr-severity ${obs.severity || "none"}`}>{cap(obs.severity) || "—"}</span>
+        </span>
       </div>
-      <div className="obs-body">
-        <div className="obs-grid">
-          {[
-            { label: "Area / Location", val: obs.area },
-            { label: "Severity", val: title(obs.severity) },
-            { label: "Treatment Used", val: obs.treatment },
-            { label: "Chemical / Product", val: obs.chemical_used },
-            { label: "Quantity Used", val: obs.quantity },
-            { label: "Recorded At", val: fmt(obs.recorded_at) },
-          ].map((f, i) => (
-            <div key={i}>
-              <div className="obs-field-label">{f.label}</div>
-              <div className="obs-field-val">{f.val || "—"}</div>
-            </div>
-          ))}
+      <div className="rr-obs-body">
+
+        {/* Top summary row */}
+        <div className="rr-obs-grid">
+          <SField label="Area / Location" value={obs.area} />
+          <SField label="Recorded At"
+            value={obs.observation_time
+              ? new Date(obs.observation_time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+              : "—"} />
+          <SField label="Recorded By" value={obs.recorded_by} />
         </div>
 
-        {obs.rodent_detail && (
-          <ObsNotes label="Rodent Details">
-            Bait stations placed: {obs.rodent_detail.bait_stations_placed || "—"} &nbsp;·&nbsp;
-            Traps set: {obs.rodent_detail.traps_set || "—"} &nbsp;·&nbsp;
-            Activity level: {title(obs.rodent_detail.activity_level)}
-          </ObsNotes>
+        {/* ── RODENT DETAIL ── */}
+        {r && (
+          <div className="rr-detail-box">
+            <div className="rr-detail-title">Rodent Inspection Details</div>
+            <DRow label="Box ID" value={r.rodent_box_id} />
+            <DRow label="Location" value={r.location} />
+            <DRow label="Rats Found" value={r.rats_found_count} />
+            <DRow label="Activity Level" value={cap(r.activity_level)} />
+            <DRow label="Bait Consumed" value={yesNo(r.bait_consumed)}
+              cls={r.bait_consumed ? "warn" : "yes"} />
+            <DRow label="Bait Replaced" value={yesNo(r.bait_replaced)}
+              cls={r.bait_replaced ? "yes" : "no"} />
+            <DRow label="Droppings Observed" value={yesNo(r.droppings_observed)}
+              cls={r.droppings_observed ? "warn" : ""} />
+            <DRow label="Gnaw Marks" value={yesNo(r.gnaw_marks)}
+              cls={r.gnaw_marks ? "warn" : ""} />
+          </div>
         )}
-        {obs.flying_insect_detail && (
-          <ObsNotes label="Flying Insect Details">
-            Device type: {obs.flying_insect_detail.device_type || "—"} &nbsp;·&nbsp;
-            Count: {obs.flying_insect_detail.insect_count || "—"} &nbsp;·&nbsp;
-            Action: {title(obs.flying_insect_detail.action_taken)}
-          </ObsNotes>
+
+        {/* ── FLYING INSECT DETAIL ── */}
+        {f && (
+          <div className="rr-detail-box">
+            <div className="rr-detail-title">Flying Insect Inspection Details</div>
+            <DRow label="Machine ID" value={f.machine_id} />
+            <DRow label="Machine Location" value={f.machine_location} />
+            <DRow label="Insects Trapped" value={f.insect_count} />
+            <DRow label="Insect Types"
+              value={Array.isArray(f.insect_types) ? f.insect_types.join(", ") : f.insect_types} />
+            <DRow label="Glue Board Changed" value={yesNo(f.glue_board_changed)}
+              cls={f.glue_board_changed ? "yes" : "no"} />
+            <DRow label="Glue Board Condition" value={cap(f.glue_board_condition)} />
+            <DRow label="Machine Functional" value={yesNo(f.machine_functional)}
+              cls={f.machine_functional ? "yes" : "no"} />
+            <DRow label="Action Taken" value={f.action_taken} />
+          </div>
         )}
-        {obs.cockroach_detail && (
-          <ObsNotes label="Cockroach Details">
-            Gel applied: {obs.cockroach_detail.gel_applied ? "Yes" : "No"} &nbsp;·&nbsp;
-            Spray used: {obs.cockroach_detail.spray_used ? "Yes" : "No"} &nbsp;·&nbsp;
-            Infestation level: {title(obs.cockroach_detail.infestation_level)}
-          </ObsNotes>
+
+        {/* ── COCKROACH DETAIL ── */}
+        {c && (
+          <div className="rr-detail-box">
+            <div className="rr-detail-title">Cockroach Inspection Details</div>
+            <DRow label="Station ID" value={c.station_id} />
+            <DRow label="Location" value={c.location} />
+            <DRow label="Cockroaches Found" value={c.cockroaches_found} />
+            <DRow label="Activity Level" value={cap(c.infestation_level)} />
+            <DRow label="Infestation Area" value={c.infestation_area} />
+            <DRow label="Gel Applied" value={yesNo(c.gel_applied)}
+              cls={c.gel_applied ? "yes" : ""} />
+            <DRow label="Gel Consumed" value={yesNo(c.gel_consumed)}
+              cls={c.gel_consumed ? "warn" : ""} />
+          </div>
         )}
-        {obs.termite_detail && (
-          <ObsNotes label="Termite Details">
-            Drilling done: {obs.termite_detail.drilling_done ? "Yes" : "No"} &nbsp;·&nbsp;
-            Chemical injected: {obs.termite_detail.chemical_injected ? "Yes" : "No"} &nbsp;·&nbsp;
-            Affected area: {obs.termite_detail.affected_area || "—"}
-          </ObsNotes>
+
+        {/* ── TERMITE DETAIL ── */}
+        {t && (
+          <div className="rr-detail-box">
+            <div className="rr-detail-title">Termite Inspection Details</div>
+            <DRow label="Station ID" value={t.station_id} />
+            <DRow label="Location" value={t.station_location} />
+            <DRow label="Termites Found" value={yesNo(t.termites_found)}
+              cls={t.termites_found ? "no" : "yes"} />
+            <DRow label="Mud Tubes Found" value={yesNo(t.mud_tubes_found)}
+              cls={t.mud_tubes_found ? "warn" : ""} />
+            <DRow label="Wood Damage" value={yesNo(t.wood_damage)}
+              cls={t.wood_damage ? "no" : ""} />
+            <DRow label="Damage Severity" value={cap(t.damage_severity)} />
+            <DRow label="Bait Consumed" value={yesNo(t.bait_consumed)}
+              cls={t.bait_consumed ? "warn" : ""} />
+            <DRow label="Bait Replaced" value={yesNo(t.bait_replaced)}
+              cls={t.bait_replaced ? "yes" : ""} />
+          </div>
         )}
-        {obs.mosquito_detail && (
-          <ObsNotes label="Mosquito Details">
-            Fogging done: {obs.mosquito_detail.fogging_done ? "Yes" : "No"} &nbsp;·&nbsp;
-            Larvicide applied: {obs.mosquito_detail.larvicide_applied ? "Yes" : "No"} &nbsp;·&nbsp;
-            Breeding sites found: {obs.mosquito_detail.breeding_sites_found ?? "0"}
-          </ObsNotes>
+
+        {/* ── MOSQUITO DETAIL ── */}
+        {m && (
+          <div className="rr-detail-box">
+            <div className="rr-detail-title">Mosquito Treatment Details</div>
+            <DRow label="Treatment Area" value={m.treatment_area} />
+            <DRow label="Adult Density" value={cap(m.adult_mosquito_density)} />
+            <DRow label="Fogging Done" value={yesNo(m.fogging_done)}
+              cls={m.fogging_done ? "yes" : ""} />
+            <DRow label="Chemical Used" value={m.chemical_used || "—"} />
+            <DRow label="Breeding Sites Found" value={m.breeding_sites_found} />
+            <DRow label="Breeding Sites Eliminated" value={m.breeding_sites_eliminated} />
+            <DRow label="Larval Activity" value={yesNo(m.larval_activity)}
+              cls={m.larval_activity ? "warn" : ""} />
+          </div>
         )}
-        {obs.general_detail && (
-          <ObsNotes label="General Details">
-            {obs.general_detail.description || "No additional details."}
-          </ObsNotes>
+
+        {/* ── GENERAL DETAIL ── */}
+        {g && (
+          <div className="rr-detail-box">
+            <div className="rr-detail-title">General Pest Details</div>
+            <DRow label="Pest Type" value={g.pest_type_observed} />
+            <DRow label="Location" value={g.location} />
+            <DRow label="Pest Count" value={g.pest_count} />
+            <DRow label="Activity Level" value={cap(g.activity_level)} />
+            <DRow label="Treatment Applied" value={yesNo(g.treatment_applied)}
+              cls={g.treatment_applied ? "yes" : ""} />
+            <DRow label="Treatment Description" value={g.treatment_description || "—"} />
+            {g.recommended_action && (
+              <DRow label="Recommended Action" value={g.recommended_action} />
+            )}
+          </div>
         )}
-        {obs.notes && (
-          <ObsNotes label="Technician Notes">{obs.notes}</ObsNotes>
+
+        {/* Remarks */}
+        {remarks && (
+          <div className="rr-obs-notes">
+            <strong>Technician Remarks:</strong> {remarks}
+          </div>
+        )}
+
+        {/* Photo */}
+        {photo && (
+          <img src={photo} alt="Evidence" className="rr-obs-photo"
+            onClick={() => onPhoto(photo)} />
         )}
       </div>
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-// FIX: Accept jobId + onClose props. When jobId is provided, fetch real data
-//      from the API instead of using hardcoded DEMO_DATA.
-// TO this:
 export default function AdminReportDetailPage({ jobId: jobIdProp, onClose: onCloseProp }) {
-  const { id } = useParams();
+  const { id }   = useParams();
   const navigate = useNavigate();
 
-  const jobId = jobIdProp ?? id;
+  const jobId  = jobIdProp ?? id;
   const onClose = onCloseProp ?? (() => navigate("/dashboard/reports"));
 
-  console.log("jobId =", jobId);
-
-  const [data,    setData]    = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState("");
+  const [data,      setData]      = useState(null);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState("");
+  const [lightbox,  setLightbox]  = useState(null);
 
   useEffect(() => {
-  if (!jobId) {
-    setError("No job ID provided.");
-    setLoading(false);
-    return;
-  }
+    if (!jobId) { setError("No job ID provided."); setLoading(false); return; }
+    setLoading(true); setError("");
+    api.get(`/pdf/job/${jobId}/`)
+      .then(res => setData(res.data?.data ?? res.data))
+      .catch(err => setError(
+        err.response?.data?.error || err.response?.data?.detail ||
+        "Failed to load report. Please try again."
+      ))
+      .finally(() => setLoading(false));
+  }, [jobId]);
 
-  setLoading(true);
-  setError("");
+  if (loading) return (
+    <><style>{css}</style>
+      <div className="rr-loading"><div className="rr-spinner"/>Loading report for Job #{jobId}…</div>
+    </>
+  );
 
-  api.get(`/pdf/job/${jobId}/`)   // ← only this line changes
-    .then(res => {
-      const payload = res.data?.data ?? res.data;
-      setData(payload);
-    })
-    .catch(err => {
-      const msg = err.response?.data?.error
-        || err.response?.data?.detail
-        || "Failed to load report. Please try again.";
-      setError(msg);
-    })
-    .finally(() => setLoading(false));
-}, [jobId]);
+  if (error || !data) return (
+    <><style>{css}</style>
+      <div className="rr-wrap">
+        <button className="rr-back" onClick={onClose}>
+          <svg viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          Back to Reports
+        </button>
+        <div className="rr-error">{error || "No report data available."}</div>
+      </div>
+    </>
+  );
 
-  // ── Loading state ──
-  if (loading) {
-    return (
-      <>
-        <style>{css}</style>
-        <div className="report-loading">
-          <div className="report-spinner" />
-          Loading report for Job #{jobId}…
-        </div>
-      </>
-    );
-  }
+  const { job, customer, technician, observations = [], alerts = [], report } = data;
 
-  // ── Error state ──
-  if (error || !data) {
-    return (
-      <>
-        <style>{css}</style>
-        {onClose && (
-          <div className="report-back-bar">
-            <button className="report-back-btn" type="button" onClick={onClose}>
-              <svg viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
-              Back to Reports
-            </button>
-          </div>
-        )}
-        <div className="report-error-box">{error || "No report data available."}</div>
-      </>
-    );
-  }
-
-  // ── Destructure real API data ──
-  // FIX: customer name, technician name, observations etc. all come from the
-  //      real API response instead of the hardcoded DEMO_DATA object.
-  const { job, customer, technician, observations = [], alerts = [] } = data;
-
-  // FIX: Build the customer's display name from whatever fields your API returns.
   const customerName =
     customer?.name ||
-    (customer?.first_name
-      ? `${customer.first_name} ${customer.last_name || ""}`.trim()
-      : null) ||
-    customer?.username ||
-    "Unknown Customer";
+    (customer?.first_name ? `${customer.first_name} ${customer.last_name || ""}`.trim() : null) ||
+    customer?.username || "Unknown Customer";
 
   const techName = technician
     ? (technician.first_name
@@ -348,166 +417,215 @@ export default function AdminReportDetailPage({ jobId: jobIdProp, onClose: onClo
     : null;
 
   const statusColor =
-    job?.status === "completed" || job?.status === "report_sent"
-      ? "green"
-      : job?.status === "cancelled"
-      ? "red"
-      : "amber";
+    ["completed", "report_sent"].includes(job?.status) ? "completed"
+    : job?.status === "in_progress" ? "in_progress"
+    : "scheduled";
 
-  const generatedAt =
-    new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) +
-    ", " +
-    new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const isBase64Sig = job?.signed_by?.startsWith("data:image");
 
   return (
-    <>
-      <style>{css}</style>
+    <><style>{css}</style>
+      <div className="rr-wrap">
 
-      {/* FIX: Back button so the user can return to the list without a page reload */}
-      {onClose && (
-        <div className="report-back-bar">
-          <button className="report-back-btn" type="button" onClick={onClose}>
-            <svg viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
-            Back to Reports
-          </button>
+        {/* BACK */}
+        <button className="rr-back" onClick={onClose}>
+          <svg viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          Back to Reports
+        </button>
+
+        <div className="rr-card">
+
+          {/* ── HEADER ── */}
+          <div className="rr-header">
+            <div>
+              <div className="rr-logo-row">
+                <div className="rr-logo-box">
+                  <svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg>
+                </div>
+                <span className="rr-company">PestPro</span>
+              </div>
+              <div className="rr-company-sub">Professional Pest Control Services</div>
+            </div>
+            <div className="rr-header-right">
+              <div className="rr-report-title">Service Report</div>
+              <div className="rr-report-meta">
+                Job ID &nbsp;<span>#{job?.id}</span><br/>
+                Customer &nbsp;<span>{customerName}</span><br/>
+                Generated &nbsp;<span>{new Date().toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"})}</span><br/>
+                {job?.job_uuid && <>UUID &nbsp;<span style={{fontSize:10}}>{job.job_uuid}</span></>}
+              </div>
+            </div>
+          </div>
+
+          {/* ── JOB SUMMARY ── */}
+          <div className="rr-summary">
+            <div className="rr-sum-cell">
+              <div className="rr-sum-label">Status</div>
+              <div className={`rr-chip ${statusColor}`}>
+                <span className="rr-chip-dot"/>
+                {cap(job?.status)}
+              </div>
+            </div>
+            <div className="rr-sum-cell">
+              <div className="rr-sum-label">Service Type</div>
+              <div className="rr-sum-val">{cap(job?.service_type)}</div>
+            </div>
+            <div className="rr-sum-cell">
+              <div className="rr-sum-label">Customer</div>
+              <div className="rr-sum-val">{customerName}</div>
+            </div>
+            <div className="rr-sum-cell">
+              <div className="rr-sum-label">Scheduled</div>
+              <div className="rr-sum-val muted" style={{color:"var(--muted)"}}>{fmt(job?.scheduled_datetime)}</div>
+            </div>
+            <div className="rr-sum-cell">
+              <div className="rr-sum-label">Completed</div>
+              <div className="rr-sum-val green">{fmt(job?.completed_at)}</div>
+            </div>
+            <div className="rr-sum-cell">
+              <div className="rr-sum-label">Site Address</div>
+              <div className="rr-sum-val muted" style={{color:"var(--muted)",fontSize:12}}>{job?.site_address || "—"}</div>
+            </div>
+          </div>
+
+          {/* ── DOWNLOAD PDF ── */}
+          {report?.report_file && (
+            <div className="rr-section" style={{paddingBottom:16}}>
+              <div className="rr-download-bar">
+                <div>
+                  <div className="rr-download-info">PDF Report Ready</div>
+                  <div className="rr-download-sub">
+                    {report.file_size_kb} KB ·
+                    {report.is_expired
+                      ? " Link expired — regenerate from Reports page"
+                      : ` Expires ${fmt(report.token_expires_at, {dateOnly:true})}`}
+                  </div>
+                </div>
+                {!report.is_expired && (
+                  <a href={report.report_file} target="_blank" rel="noopener noreferrer"
+                    className="rr-download-btn">
+                    <svg viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Download PDF
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── CUSTOMER DETAILS ── */}
+          <div className="rr-section">
+            <div className="rr-section-title">Customer Details</div>
+            <div className="rr-info-grid">
+              <div className="rr-info-row"><span className="rr-info-label">Full Name</span><span className="rr-info-val">{customerName}</span></div>
+              <div className="rr-info-row"><span className="rr-info-label">Email</span><span className="rr-info-val">{customer?.email || "—"}</span></div>
+              <div className="rr-info-row"><span className="rr-info-label">Phone</span><span className="rr-info-val">{customer?.phone || "—"}</span></div>
+              <div className="rr-info-row"><span className="rr-info-label">Company</span><span className="rr-info-val">{customer?.company_name || "—"}</span></div>
+              <div className="rr-info-row full"><span className="rr-info-label">Address</span>
+                <span className="rr-info-val">
+                  {customer?.address ? `${customer.address}${customer.city ? ", " + customer.city : ""}` : "—"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── TECHNICIAN DETAILS ── */}
+          <div className="rr-section">
+            <div className="rr-section-title">Assigned Technician</div>
+            {techName ? (
+              <div className="rr-info-grid">
+                <div className="rr-info-row"><span className="rr-info-label">Name</span><span className="rr-info-val">{techName}</span></div>
+                <div className="rr-info-row"><span className="rr-info-label">Email</span><span className="rr-info-val">{technician?.email || "—"}</span></div>
+                <div className="rr-info-row"><span className="rr-info-label">Phone</span><span className="rr-info-val">{technician?.phone || "—"}</span></div>
+                <div className="rr-info-row"><span className="rr-info-label">Username</span><span className="rr-info-val">@{technician?.username}</span></div>
+              </div>
+            ) : (
+              <div className="rr-empty">No technician assigned.</div>
+            )}
+          </div>
+
+          {/* ── OBSERVATIONS ── */}
+          <div className="rr-section">
+            <div className="rr-section-title">
+              Service Observations
+              {observations.length > 0 && (
+                <span style={{background:"var(--green-light)",color:"var(--green)",
+                  borderRadius:6,padding:"1px 8px",fontSize:11,marginLeft:4}}>
+                  {observations.length}
+                </span>
+              )}
+            </div>
+            {observations.length > 0
+              ? observations.map((obs, i) => (
+                  <ObsCard key={obs.id || i} obs={obs} index={i} onPhoto={setLightbox}/>
+                ))
+              : <div className="rr-empty">No observations recorded for this job.</div>
+            }
+          </div>
+
+          {/* ── ACTIVE ALERTS ── */}
+          {alerts.length > 0 && (
+            <div className="rr-section">
+              <div className="rr-section-title">Smart Alerts</div>
+              {alerts.map((a, i) => (
+                <div key={i} className="rr-alert">
+                  <div className="rr-alert-dot"/>
+                  <div>
+                    <div className="rr-alert-title">{a.title}</div>
+                    <div className="rr-alert-msg">{a.message}</div>
+                  </div>
+                  <div className="rr-alert-type">{cap(a.alert_type)} · {cap(a.priority)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── DIGITAL SIGNATURE ── */}
+          <div className="rr-section">
+            <div className="rr-section-title">Digital Signature</div>
+            {job?.signed_by ? (
+              <div className="rr-sig-box">
+                <div>
+                  <div className="rr-sig-label">Customer / Technician Signature</div>
+                  {isBase64Sig
+                    ? <img src={job.signed_by} alt="Signature" className="rr-sig-img"/>
+                    : <div style={{fontSize:14,color:"var(--ink)",fontStyle:"italic"}}>{job.signed_by}</div>
+                  }
+                  <div className="rr-sig-date">
+                    Signed on {fmt(job.completed_at)}
+                  </div>
+                </div>
+                <div className="rr-sig-verified">✓ Digitally Verified</div>
+              </div>
+            ) : (
+              <div className="rr-empty">No digital signature recorded.</div>
+            )}
+          </div>
+
+          {/* ── FOOTER ── */}
+          <div className="rr-footer">
+            <div>
+              <div className="rr-footer-brand">PestPro</div>
+              <div className="rr-footer-sub">Professional Pest Control Services<br/>System-generated report</div>
+            </div>
+            <div className="rr-footer-right">
+              {customerName} · Job #{job?.id}<br/>
+              {new Date().toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"})}<br/>
+              {job?.job_uuid && <span style={{color:"var(--green)",fontSize:10}}>{job.job_uuid}</span>}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* PHOTO LIGHTBOX */}
+      {lightbox && (
+        <div className="rr-lightbox" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt="Evidence"/>
         </div>
       )}
-
-      <div className="report-root">
-
-        {/* ── HEADER ── */}
-        <div className="header">
-          <div>
-            <div className="logo-row">
-              <div className="logo-box">
-                <svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg>
-              </div>
-              <span className="company-name">PestPro</span>
-            </div>
-            <div className="company-sub">Professional Pest Control Services</div>
-          </div>
-          <div className="header-right">
-            <div className="report-title">Service Report</div>
-            <div className="report-meta">
-              {/* FIX: Show real job ID and UUID from API */}
-              Job ID &nbsp;<span>#{job?.id}</span><br />
-              {/* FIX: Show the real customer name prominently */}
-              Customer &nbsp;<span>{customerName}</span><br />
-              Generated &nbsp;<span>{generatedAt}</span><br />
-              {job?.job_uuid && <>Report UUID &nbsp;<span>{job.job_uuid}</span></>}
-            </div>
-          </div>
-        </div>
-
-        {/* ── JOB SUMMARY ── */}
-        <SectionTitle>Job Summary</SectionTitle>
-        <div className="meta-grid">
-          <MetaCell label="Status"         value={title(job?.status)}       color={statusColor} />
-          <MetaCell label="Service Type"   value={title(job?.service_type)} />
-          {/* FIX: Show customer name in the summary grid as well */}
-          <MetaCell label="Customer"       value={customerName}             color="muted" />
-          <MetaCell label="Scheduled Date" value={fmt(job?.scheduled_datetime)} color="muted" />
-          <MetaCell label="Completed At"   value={fmt(job?.completed_at)}   color="muted" />
-          <MetaCell label="Location"       value={job?.location}            color="muted" />
-        </div>
-
-        {job?.notes && (
-          <div className="obs-notes" style={{ marginBottom: 8 }}>
-            <div className="obs-notes-label">Job Notes</div>
-            {job.notes}
-          </div>
-        )}
-
-        {/* ── CUSTOMER DETAILS ── */}
-        <SectionTitle>Customer Details</SectionTitle>
-        <InfoCard
-          title="Contact Information"
-          rows={[
-            // FIX: Use the normalised customerName so it always shows a real name
-            { label: "Full Name",     value: customerName },
-            { label: "Email Address", value: customer?.email },
-            { label: "Phone",         value: customer?.phone },
-            customer?.company_name && { label: "Company", value: customer.company_name },
-            customer?.address && {
-              label: "Address",
-              value: `${customer.address}${customer.city ? ", " + customer.city : ""}`,
-            },
-          ]}
-        />
-
-        {/* ── TECHNICIAN DETAILS ── */}
-        <SectionTitle>Assigned Technician</SectionTitle>
-        {techName ? (
-          <InfoCard
-            title="Technician Information"
-            rows={[
-              { label: "Name",     value: techName },
-              { label: "Email",    value: technician?.email },
-              { label: "Phone",    value: technician?.phone },
-              { label: "Username", value: technician?.username ? `@${technician.username}` : "—" },
-            ]}
-          />
-        ) : (
-          <div className="no-data">No technician assigned to this job.</div>
-        )}
-
-        {/* ── SERVICE OBSERVATIONS ── */}
-        <SectionTitle>Service Observations</SectionTitle>
-        {observations.length > 0 ? (
-          observations.map((obs, i) => (
-            <ObservationCard key={i} obs={obs} index={i} />
-          ))
-        ) : (
-          <div className="no-data">No observations recorded for this job.</div>
-        )}
-
-        {/* ── ACTIVE ALERTS ── */}
-        {alerts.length > 0 && (
-          <>
-            <SectionTitle>Active Alerts</SectionTitle>
-            {alerts.map((alert, i) => (
-              <div className="alert-row" key={i}>
-                <div className="alert-dot" />
-                <div className="alert-text">{alert.message || alert.title || "Alert"}</div>
-                <div className="alert-type">{title(alert.alert_type)}</div>
-              </div>
-            ))}
-          </>
-        )}
-
-        {/* ── DIGITAL SIGNATURE ── */}
-        <SectionTitle>Digital Signature</SectionTitle>
-        {job?.signed_by ? (
-          <div className="signature-box">
-            <div>
-              <div className="signature-label">Signed By</div>
-              <div className="signature-name">{job.signed_by}</div>
-              <div className="signature-date">{fmt(job.signed_at || job.completed_at)}</div>
-            </div>
-            <div>
-              <div className="signature-verified">✓ Digitally Verified</div>
-            </div>
-          </div>
-        ) : (
-          <div className="no-data">No digital signature recorded.</div>
-        )}
-
-        {/* ── FOOTER ── */}
-        <div className="footer">
-          <div className="footer-left">
-            <div className="footer-brand">PestPro</div>
-            Professional Pest Control Services<br />
-            This is a system-generated report.
-          </div>
-          <div className="footer-right">
-            {/* FIX: Show real customer name in footer too */}
-            {customerName} &nbsp;·&nbsp; Job #{job?.id}<br />
-            {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}<br />
-            {job?.job_uuid && <span style={{ color: "var(--green)" }}>{job.job_uuid}</span>}
-          </div>
-        </div>
-
-      </div>
     </>
   );
 }
