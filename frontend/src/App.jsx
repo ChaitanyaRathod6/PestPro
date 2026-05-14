@@ -21,6 +21,7 @@ import AdminAlertsPage from './pages/admin/AdminSmartAlerts'
 import AdminAlertDetailPage from './pages/admin/AdminSmartAlertDetailPge'
 import AdminReportsPage from './pages/admin/AdminReportsPage'
 import AdminReportDetailPage from './pages/admin/AdminReportDetailPage'
+import TechnicianPerformancePage from './pages/technician/PerformancePage'
 
 function App() {
   return (
@@ -167,6 +168,14 @@ function App() {
   }
 />
       
+<Route
+  path="/technician/performance"
+  element={
+    <ProtectedRoute allowedRoles={["technician"]}>
+      <TechnicianPerformancePage />
+    </ProtectedRoute>
+  }
+/>
 
           {/* Customer dashboard */}
           <Route path="/customer" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard/></ProtectedRoute>} />

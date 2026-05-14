@@ -35,7 +35,6 @@ const fmtDateTime = (dt) => {
   })
 }
 const isExpired = (dt) => dt && new Date(dt) < new Date()
-
 const AUTO_REFRESH_SECS = 30
 
 /* ─────────────────────────────────────────────
@@ -51,19 +50,18 @@ const SERVICE_CONFIG = {
   bed_bug:       { label: 'Bed Bug',       color: 'red',    abbr: 'BB' },
   ant:           { label: 'Ant',           color: 'amber',  abbr: 'AN' },
 }
-
 const getServiceCfg = (serviceType) => {
   if (!serviceType) return { label: 'General', color: 'green', abbr: 'GP' }
   const key = serviceType.toLowerCase().replace(/ /g, '_')
   return SERVICE_CONFIG[key] || {
     label: serviceType.charAt(0).toUpperCase() + serviceType.slice(1),
     color: 'green',
-    abbr: serviceType.slice(0, 2).toUpperCase(),
+    abbr:  serviceType.slice(0, 2).toUpperCase(),
   }
 }
 
 /* ─────────────────────────────────────────────
-   EMAIL TYPE CONFIG
+   EMAIL CONFIG
 ───────────────────────────────────────────── */
 const EMAIL_TYPE_CONFIG = {
   otp_login:           { label: 'OTP Login',          color: 'blue'   },
@@ -73,7 +71,6 @@ const EMAIL_TYPE_CONFIG = {
   high_activity_alert: { label: 'High Activity Alert', color: 'red'    },
   maintenance_alert:   { label: 'Maintenance Alert',   color: 'amber'  },
 }
-
 const EMAIL_STATUS_CONFIG = {
   sent:     { label: 'Sent',     color: 'green' },
   failed:   { label: 'Failed',   color: 'red'   },
@@ -94,14 +91,14 @@ const navItems = [
   { id: 'settings',    label: 'Settings',     path: '/dashboard/settings',    d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ]
 
-const REPORT_SECTION_TABS = [
+const SECTION_TABS = [
   { key: 'pdf',   label: 'PDF Reports' },
   { key: 'email', label: 'Email Logs'  },
   { key: 'stats', label: 'Email Stats' },
 ]
 
 /* ─────────────────────────────────────────────
-   STYLES
+   STYLES — matches technician page exactly
 ───────────────────────────────────────────── */
 const S = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
@@ -113,9 +110,9 @@ const S = `
   --red:#e74c3c;--amber:#e6a817;--blue:#3b82f6;--purple:#7c3aed;--orange:#e6550d;
   --sidebar-w:220px;
 }
-.rp-root{font-family:'DM Serif Display',serif;min-height:100vh;background:var(--bg);display:flex;}
+.rp-root{font-family:'DM Serif Display',serif;min-height:100vh;background:var(--bg);display:flex;overflow-x:hidden;}
 
-/* SIDEBAR */
+/* ── SIDEBAR ── */
 .rp-sidebar{width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);
   display:flex;flex-direction:column;min-height:100vh;
   position:fixed;top:0;left:0;bottom:0;z-index:200;overflow-y:auto;transition:transform .25s ease;}
@@ -143,8 +140,8 @@ const S = `
 .rp-hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px;border-radius:6px;color:var(--ink);}
 .rp-hamburger svg{width:20px;height:20px;}
 
-/* MAIN */
-.rp-main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;}
+/* ── MAIN ── */
+.rp-main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;max-width:calc(100vw - var(--sidebar-w));overflow-x:hidden;}
 .rp-topbar{background:var(--white);border-bottom:1px solid var(--border);
   padding:0 24px;height:52px;display:flex;align-items:center;
   justify-content:space-between;position:sticky;top:0;z-index:100;flex-shrink:0;gap:12px;}
@@ -164,33 +161,24 @@ const S = `
 .rp-refresh-btn.spinning svg{animation:rpSpin .55s linear;}
 @keyframes rpSpin{to{transform:rotate(360deg);}}
 
-/* CONTENT */
+/* ── CONTENT ── */
 .rp-content{padding:22px 24px;flex:1;}
 .rp-page-title{font-size:22px;color:var(--ink);margin-bottom:3px;}
 .rp-page-sub{font-size:13px;color:var(--pale);margin-bottom:20px;font-style:italic;}
 
-/* STATS */
+/* ── STATS ── */
 .rp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
 .rp-stat{background:var(--white);border-radius:14px;padding:16px 18px;box-shadow:0 1px 8px rgba(0,0,0,.05);}
 .rp-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--pale);margin-bottom:6px;}
 .rp-stat-val{font-size:28px;color:var(--ink);letter-spacing:-1px;line-height:1;}
 .rp-stat-val.green{color:var(--green);}
 .rp-stat-val.red{color:var(--red);}
-.rp-stat-val.amber{color:var(--amber);}
 .rp-stat-val.blue{color:var(--blue);}
+.rp-stat-val.amber{color:var(--amber);}
 .rp-stat-sub{font-size:11px;color:var(--muted);margin-top:4px;}
 
-/* SECTION TABS */
-.rp-section-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
-.rp-section-tab{padding:8px 20px;border-radius:20px;font-family:'DM Serif Display',serif;
-  font-size:13px;cursor:pointer;border:1.5px solid var(--border);
-  background:var(--white);color:var(--muted);transition:all .15s;white-space:nowrap;}
-.rp-section-tab:hover{border-color:var(--green);color:var(--green);}
-.rp-section-tab.active{background:var(--green);color:#fff;border-color:var(--green);}
-
-/* FILTER TABS — service type tabs (scrollable row) */
-.rp-tabs-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:18px;padding-bottom:2px;}
-.rp-tabs{display:flex;gap:6px;flex-wrap:nowrap;min-width:max-content;}
+/* ── TABS ── */
+.rp-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
 .rp-tab{padding:7px 16px;border-radius:20px;font-family:'DM Serif Display',serif;
   font-size:12.5px;cursor:pointer;border:1.5px solid var(--border);
   background:var(--white);color:var(--muted);transition:all .15s;white-space:nowrap;}
@@ -200,15 +188,33 @@ const S = `
 .rp-tab:not(.active) .rp-tab-count{background:var(--bg);color:var(--muted);}
 .rp-tab.active .rp-tab-count{background:rgba(255,255,255,.25);}
 
-/* Colored active tabs per service */
-.rp-tab.active.tab-blue{background:var(--blue);border-color:var(--blue);}
-.rp-tab.active.tab-amber{background:var(--amber);border-color:var(--amber);}
-.rp-tab.active.tab-red{background:var(--red);border-color:var(--red);}
-.rp-tab.active.tab-purple{background:var(--purple);border-color:var(--purple);}
-.rp-tab.active.tab-orange{background:var(--orange);border-color:var(--orange);}
-.rp-tab.active.tab-green{background:var(--green);border-color:var(--green);}
+/* Section tabs */
+.rp-section-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+.rp-section-tab{padding:7px 16px;border-radius:20px;font-family:'DM Serif Display',serif;
+  font-size:12.5px;cursor:pointer;border:1.5px solid var(--border);
+  background:var(--white);color:var(--muted);transition:all .15s;white-space:nowrap;}
+.rp-section-tab:hover{border-color:var(--green);color:var(--green);}
+.rp-section-tab.active{background:var(--green);color:#fff;border-color:var(--green);}
 
-/* CONTROLS */
+/* Service filter tabs — scrollable */
+.rp-filter-wrap{overflow-x:unset;margin-bottom:18px;padding-bottom:2px;}
+  .rp-filter-tabs{display:flex;gap:6px;flex-wrap:wrap;min-width:unset;}
+.rp-filter-tab{padding:7px 16px;border-radius:20px;font-family:'DM Serif Display',serif;
+  font-size:12.5px;cursor:pointer;border:1.5px solid var(--border);
+  background:var(--white);color:var(--muted);transition:all .15s;white-space:nowrap;}
+.rp-filter-tab:hover{border-color:var(--green);color:var(--green);}
+.rp-filter-tab.active{background:var(--green);color:#fff;border-color:var(--green);}
+.rp-filter-tab.active.c-blue{background:var(--blue);border-color:var(--blue);}
+.rp-filter-tab.active.c-amber{background:var(--amber);border-color:var(--amber);}
+.rp-filter-tab.active.c-red{background:var(--red);border-color:var(--red);}
+.rp-filter-tab.active.c-purple{background:var(--purple);border-color:var(--purple);}
+.rp-filter-tab.active.c-orange{background:var(--orange);border-color:var(--orange);}
+.rp-filter-tab.active.c-green{background:var(--green);border-color:var(--green);}
+.rp-ftab-count{border-radius:10px;padding:1px 6px;font-size:11px;margin-left:5px;}
+.rp-filter-tab:not(.active) .rp-ftab-count{background:var(--bg);color:var(--muted);}
+.rp-filter-tab.active .rp-ftab-count{background:rgba(255,255,255,.25);}
+
+/* ── CONTROLS ── */
 .rp-controls{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
 .rp-search-wrap{flex:1;min-width:200px;position:relative;}
 .rp-search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);
@@ -222,24 +228,24 @@ const S = `
   color:var(--ink);outline:none;background:var(--white);cursor:pointer;min-width:180px;}
 .rp-sort-select:focus{border-color:var(--green);}
 
-/* LIST HDR */
+/* ── LIST HDR ── */
 .rp-list-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .rp-list-title{font-size:15px;color:var(--ink);}
 .rp-list-meta{font-size:12px;color:var(--pale);}
 
-/* REPORT CARD */
+/* ── REPORT CARD — matches technician card exactly ── */
 .rp-card{background:var(--white);border-radius:14px;padding:18px 20px;
   margin-bottom:10px;display:flex;align-items:center;gap:16px;
-  box-shadow:0 1px 6px rgba(0,0,0,.05);transition:box-shadow .15s,transform .15s;}
+  box-shadow:0 1px 6px rgba(0,0,0,.05);transition:box-shadow .15s,transform .15s;cursor:pointer;}
 .rp-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);transform:translateY(-1px);}
-.rp-avatar{width:42px;height:42px;border-radius:50%;background:var(--green);
+.rp-avatar{width:42px;height:42px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;flex-shrink:0;}
+.rp-avatar.green{background:var(--green);}
 .rp-avatar.blue{background:var(--blue);}
 .rp-avatar.amber{background:var(--amber);}
 .rp-avatar.red{background:var(--red);}
 .rp-avatar.purple{background:var(--purple);}
 .rp-avatar.orange{background:var(--orange);}
-.rp-avatar.green{background:var(--green);}
 .rp-avatar.expired{background:#d1d5d1;}
 .rp-body{flex:1;min-width:0;}
 .rp-name-row{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;}
@@ -253,13 +259,13 @@ const S = `
 .rp-badge.purple{background:#ede9fe;color:var(--purple);}
 .rp-badge.orange{background:#fff0eb;color:var(--orange);}
 .rp-badge.muted{background:var(--bg);color:var(--muted);}
-.rp-service-badge{font-size:11px;padding:2px 9px;border-radius:20px;}
-.rp-service-badge.blue{background:#eff6ff;color:var(--blue);}
-.rp-service-badge.amber{background:#fff8ec;color:var(--amber);}
-.rp-service-badge.red{background:#fde8e8;color:var(--red);}
-.rp-service-badge.purple{background:#ede9fe;color:var(--purple);}
-.rp-service-badge.orange{background:#fff0eb;color:var(--orange);}
-.rp-service-badge.green{background:var(--green-light);color:var(--green);}
+.rp-svc-badge{font-size:11px;padding:2px 9px;border-radius:20px;}
+.rp-svc-badge.green{background:var(--green-light);color:var(--green);}
+.rp-svc-badge.blue{background:#eff6ff;color:var(--blue);}
+.rp-svc-badge.amber{background:#fff8ec;color:var(--amber);}
+.rp-svc-badge.red{background:#fde8e8;color:var(--red);}
+.rp-svc-badge.purple{background:#ede9fe;color:var(--purple);}
+.rp-svc-badge.orange{background:#fff0eb;color:var(--orange);}
 .rp-details{display:flex;gap:18px;flex-wrap:wrap;margin-top:4px;}
 .rp-detail{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);}
 .rp-detail svg{width:11px;height:11px;flex-shrink:0;}
@@ -269,22 +275,22 @@ const S = `
 .rp-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;}
 .rp-btn-view{background:var(--green-light);color:var(--green);border:none;border-radius:8px;
   padding:7px 14px;font-family:'DM Serif Display',serif;font-size:12.5px;cursor:pointer;
-  transition:background .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;}
+  transition:background .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;position:relative;z-index:2;}
 .rp-btn-view:hover{background:#d5eee3;}
 .rp-btn-view svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;}
-.rp-btn-download{background:var(--bg);color:var(--muted);border:1.5px solid var(--border);
+.rp-btn-dl{background:var(--bg);color:var(--muted);border:1.5px solid var(--border);
   border-radius:8px;padding:7px 14px;font-family:'DM Serif Display',serif;font-size:12.5px;
   cursor:pointer;transition:background .15s;white-space:nowrap;text-decoration:none;
-  display:flex;align-items:center;gap:5px;}
-.rp-btn-download:hover{background:#e2e8e2;color:var(--ink);}
-.rp-btn-download svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;}
+  display:flex;align-items:center;gap:5px;position:relative;z-index:2;}
+.rp-btn-dl:hover{background:#e2e8e2;color:var(--ink);}
+.rp-btn-dl svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;}
 .rp-btn-regen{border:none;border-radius:8px;padding:7px 14px;font-family:'DM Serif Display',serif;
   font-size:12.5px;cursor:pointer;transition:background .15s;white-space:nowrap;
-  background:#fff8ec;color:var(--amber);}
+  background:#fff8ec;color:var(--amber);position:relative;z-index:2;}
 .rp-btn-regen:hover{background:#fde8c0;}
 .rp-btn-regen:disabled{opacity:.5;cursor:not-allowed;}
 
-/* EMAIL CARD */
+/* ── EMAIL CARD ── */
 .rp-email-card{background:var(--white);border-radius:14px;padding:16px 20px;
   margin-bottom:8px;display:flex;align-items:center;gap:14px;
   box-shadow:0 1px 6px rgba(0,0,0,.05);transition:box-shadow .15s;}
@@ -308,7 +314,7 @@ const S = `
 .rp-email-detail{font-size:11.5px;color:var(--pale);display:flex;align-items:center;gap:3px;}
 .rp-email-detail svg{width:10px;height:10px;}
 
-/* STATS PANEL */
+/* ── STATS PANEL ── */
 .rp-stats-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .rp-stats-section{background:var(--white);border-radius:14px;padding:20px 22px;
   box-shadow:0 1px 8px rgba(0,0,0,.05);}
@@ -325,7 +331,7 @@ const S = `
 .rp-stat-row-val.blue{color:var(--blue);}
 .rp-stat-row-val.purple{color:var(--purple);}
 
-/* EMPTY / LOADING / ERROR */
+/* ── EMPTY / LOADING / ERROR ── */
 .rp-empty{text-align:center;padding:60px 20px;}
 .rp-empty-icon{font-size:40px;margin-bottom:12px;}
 .rp-empty-title{font-size:18px;color:var(--ink);margin-bottom:6px;}
@@ -335,7 +341,7 @@ const S = `
 @keyframes rpSpinner{to{transform:rotate(360deg);}}
 .rp-error{background:#fde8e8;color:var(--red);padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;}
 
-/* TOAST */
+/* ── TOAST ── */
 .rp-toast{position:fixed;bottom:20px;right:20px;z-index:700;
   display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:10px;
   font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.15);animation:rpSlideIn .25s ease;}
@@ -343,27 +349,75 @@ const S = `
 .rp-toast.success{background:var(--green);color:#fff;}
 .rp-toast.error{background:var(--red);color:#fff;}
 
-/* RESPONSIVE */
-@media(max-width:900px){.rp-stats{grid-template-columns:repeat(2,1fr);}.rp-stats-panel{grid-template-columns:1fr;}}
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .rp-stats{grid-template-columns:repeat(2,1fr);}
+  .rp-stats-panel{grid-template-columns:1fr;}
+}
 @media(max-width:768px){
   .rp-sidebar{transform:translateX(-100%);}
-  .rp-sidebar.open{transform:translateX(0);}
-  .rp-main{margin-left:0;}
+  .rp-sidebar.open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,.15);}
+  .rp-main{margin-left:0;max-width:100vw;}
   .rp-hamburger{display:flex;}
-  .rp-card{flex-wrap:wrap;}
-  .rp-actions{width:100%;justify-content:flex-end;}
+  .rp-card{flex-wrap:wrap;gap:12px;}
+  .rp-actions{width:100%;justify-content:flex-start;gap:8px;}
+  .rp-body{width:100%;}
+  .rp-controls{flex-direction:column;align-items:stretch;}
+  .rp-search-wrap{min-width:unset;width:100%;}
+  .rp-sort-select{width:100%;}
+  .rp-section-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none;}
+  .rp-section-tabs::-webkit-scrollbar{display:none;}
+  .rp-section-tab{flex-shrink:0;}
+  .rp-tabs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+  .rp-tabs::-webkit-scrollbar{display:none;}
+  .rp-tab{flex-shrink:0;}
+  .rp-email-card{flex-wrap:wrap;}
+  .rp-email-body{width:100%;}
+  .rp-stats-panel{grid-template-columns:1fr;}
 }
 @media(max-width:600px){
+  .rp-root{overflow-x:hidden;}
   .rp-stats{grid-template-columns:1fr 1fr;gap:10px;}
-  .rp-content{padding:14px;}
-  .rp-topbar{padding:0 14px;}
-  .rp-stat-val{font-size:22px;}
+  .rp-stat{padding:12px 14px;border-radius:12px;}
+  .rp-stat-val{font-size:24px;}
+  .rp-stat-label{font-size:9px;}
+  .rp-stat-sub{font-size:10px;}
+  .rp-content{padding:12px;}
+  .rp-topbar{padding:0 12px;}
+  .rp-page-title{font-size:20px;}
+  .rp-page-sub{font-size:11px;margin-bottom:14px;}
+  .rp-ticker{display:none;}
+  .rp-refresh-btn{padding:6px 10px;font-size:12px;}
+  .rp-crumb{font-size:12px;}
+  .rp-card{padding:12px;gap:10px;margin-bottom:8px;border-radius:12px;}
+  .rp-name{font-size:14px;}
+  .rp-badge,.rp-svc-badge{font-size:10px;padding:2px 7px;}
+  .rp-details{gap:8px;}
+  .rp-detail{font-size:11px;}
+  .rp-meta-row{gap:6px;}
+  .rp-meta{font-size:10.5px;}
+  .rp-btn-view,.rp-btn-regen,.rp-btn-dl{padding:7px 12px;font-size:12px;}
+  .rp-email-card{padding:12px;border-radius:12px;margin-bottom:6px;}
+  .rp-email-icon{width:34px;height:34px;}
+  .rp-email-to{font-size:13px;}
+  .rp-email-subject{font-size:11.5px;}
+  .rp-email-detail{font-size:11px;}
+  .rp-stats-section{padding:16px;}
+  .rp-stat-row-label{font-size:12px;}
+  .rp-stat-row-val{font-size:15px;}
+  .rp-list-title{font-size:13px;}
+  .rp-filter-tab{font-size:11.5px;padding:6px 12px;}
+}
+@media(max-width:400px){
+  .rp-stats{grid-template-columns:1fr 1fr;}
+  .rp-actions{flex-wrap:wrap;}
+  .rp-btn-view,.rp-btn-regen{flex:1;justify-content:center;}
 }
 `
 
-/* ═══════════════════════════════════════════
-   SIDEBAR (shared between list + detail views)
-═══════════════════════════════════════════ */
+/* ═══════════════════════════════
+   SIDEBAR COMPONENT
+═══════════════════════════════ */
 function Sidebar({ sidebarOpen, setSidebarOpen, userInitials, userName, handleLogout, navigate }) {
   return (
     <aside className={`rp-sidebar${sidebarOpen ? ' open' : ''}`}>
@@ -401,17 +455,17 @@ function Sidebar({ sidebarOpen, setSidebarOpen, userInitials, userName, handleLo
   )
 }
 
-/* ═══════════════════════════════════════════
+/* ═══════════════════════════════
    MAIN COMPONENT
-═══════════════════════════════════════════ */
+═══════════════════════════════ */
 export default function AdminReportsPage() {
   const { user, logout } = useAuth()
   const navigate         = useNavigate()
 
-  const [sidebarOpen,  setSidebarOpen]  = useState(false)
-  const [sectionTab,   setSectionTab]   = useState('pdf')   // pdf | email | stats
-  const [serviceFilter, setServiceFilter] = useState('all') // 'all' | any service type key
-  const [viewingJobId, setViewingJobId] = useState(null)
+  const [sidebarOpen,    setSidebarOpen]    = useState(false)
+  const [sectionTab,     setSectionTab]     = useState('pdf')
+  const [serviceFilter,  setServiceFilter]  = useState('all')
+  const [viewingJobId,   setViewingJobId]   = useState(null)
 
   /* PDF state */
   const [reports,     setReports]     = useState([])
@@ -448,11 +502,10 @@ export default function AdminReportsPage() {
     setTimeout(() => isMounted.current && setToast(null), 3500)
   }
 
-  /* ── FETCH PDF REPORTS ── */
   const fetchReports = useCallback(async (silent = false) => {
     if (!silent) setReportsErr('')
     try {
-      const res = await api.get('/pdf/')
+      const res  = await api.get('/pdf/')
       if (!isMounted.current) return
       const list = res.data?.results ?? res.data ?? []
       setReports(Array.isArray(list) ? list : [])
@@ -464,13 +517,12 @@ export default function AdminReportsPage() {
     }
   }, [])
 
-  /* ── FETCH EMAIL LOGS ── */
   const fetchEmails = useCallback(async (silent = false) => {
     if (!silent) setEmailsErr('')
     try {
       const params = {}
       if (emailFilter !== 'all') params.status = emailFilter
-      const res = await api.get('/emails/', { params })
+      const res  = await api.get('/emails/', { params })
       if (!isMounted.current) return
       const list = res.data?.results ?? res.data ?? []
       setEmails(Array.isArray(list) ? list : [])
@@ -482,17 +534,15 @@ export default function AdminReportsPage() {
     }
   }, [emailFilter])
 
-  /* ── FETCH EMAIL STATS ── */
   const fetchStats = useCallback(async () => {
     try {
       const res = await api.get('/emails/stats/')
       if (isMounted.current) setStats(res.data)
-    } catch { /* fail silently */ } finally {
+    } catch { /* silent */ } finally {
       if (isMounted.current) setStatsLoad(false)
     }
   }, [])
 
-  /* ── AUTO REFRESH ── */
   const resetTimer = useCallback(() => {
     clearInterval(tickRef.current)
     setCountdown(AUTO_REFRESH_SECS)
@@ -520,15 +570,15 @@ export default function AdminReportsPage() {
     })
   }
 
-  /* ── REGENERATE PDF ── */
-  const handleRegen = async (jobId) => {
+  const handleRegen = async (e, jobId) => {
+    e.stopPropagation()
     setRegenId(jobId)
     try {
-      await api.post(`/pdf/${jobId}/regenerate/`)
+      await api.post(`/pdf/job/${jobId}/regenerate/`)
       showToast('PDF regeneration queued. Refresh in a few seconds.')
       setTimeout(() => fetchReports(true), 3000)
-    } catch (e) {
-      showToast(e.response?.data?.error || 'Failed to regenerate report.', 'error')
+    } catch (err) {
+      showToast(err.response?.data?.error || 'Failed to regenerate.', 'error')
     } finally {
       setRegenId(null)
     }
@@ -540,26 +590,16 @@ export default function AdminReportsPage() {
     navigate('/login')
   }
 
-  /* ── SERVICE TYPES — hardcoded from DB + auto-discovered from loaded reports ──
-     The hardcoded list covers all known service types so tabs always appear.
-     Any unknown type found in the reports data is added automatically.         */
-  const ALL_SERVICE_KEYS = [
-    'mosquito', 'rodent', 'cockroach', 'termite',
-    'flying_insect', 'general', 'bed_bug', 'ant',
-  ]
-
+  /* ── Service type tabs — only from actual data ── */
   const serviceTypes = useMemo(() => {
-    // Start with all known types from SERVICE_CONFIG
-    const seen = new Set(ALL_SERVICE_KEYS)
-    // Also add any unknown types found in the actual reports (future-proofing)
+    const seen = new Set()
     reports.forEach(r => {
-      const raw = (r.service_type || r.job_service_type || '').toLowerCase().replace(/ /g, '_')
+      const raw = (r.service_type || '').toLowerCase().replace(/ /g, '_')
       if (raw) seen.add(raw)
     })
     return Array.from(seen).sort()
   }, [reports])
 
-  /* Build filter tab list: All + one per service type */
   const filterTabs = [
     { key: 'all', label: 'All Reports', color: 'green' },
     ...serviceTypes.map(key => {
@@ -568,43 +608,39 @@ export default function AdminReportsPage() {
     }),
   ]
 
-  /* ── COUNTS per tab (0 is fine — tab still shows) ── */
   const countForTab = (key) => {
     if (key === 'all') return reports.length
-    return reports.filter(r => {
-      const raw = (r.service_type || r.job_service_type || '').toLowerCase().replace(/ /g, '_')
-      return raw === key
-    }).length
+    return reports.filter(r =>
+      (r.service_type || '').toLowerCase().replace(/ /g, '_') === key
+    ).length
   }
 
-  /* ── STATS ── */
+  /* ── Stats ── */
   const totalPdfs    = reports.length
   const validCount   = reports.filter(r => !isExpired(r.token_expires_at)).length
   const expiredCount = reports.filter(r =>  isExpired(r.token_expires_at)).length
 
-  /* ── FILTER + SORT ── */
+  /* ── Filter + Sort ── */
   const filtered = reports
     .filter(r => {
-      // Service type filter
       if (serviceFilter !== 'all') {
-        const raw = (r.service_type || r.job_service_type || '').toLowerCase().replace(/ /g, '_')
+        const raw = (r.service_type || '').toLowerCase().replace(/ /g, '_')
         if (raw !== serviceFilter) return false
       }
-      // Search
       if (!pdfSearch.trim()) return true
       const q = pdfSearch.toLowerCase()
       return (
-        String(r.job_id || r.job || '').includes(q) ||
+        String(r.job_id ?? r.job ?? '').includes(q) ||
         (r.customer_name     || '').toLowerCase().includes(q) ||
         (r.customer_email    || '').toLowerCase().includes(q) ||
-        (r.generated_by_name || '').toLowerCase().includes(q) ||
-        (r.job_uuid          || '').toLowerCase().includes(q)
+        (r.generated_by_name || '').toLowerCase().includes(q)
       )
     })
-    .sort((a, b) => {
-      if (sortBy === 'date_asc')  return new Date(a.generated_at) - new Date(b.generated_at)
-      return new Date(b.generated_at) - new Date(a.generated_at) // date_desc default
-    })
+    .sort((a, b) =>
+      sortBy === 'date_asc'
+        ? new Date(a.generated_at) - new Date(b.generated_at)
+        : new Date(b.generated_at) - new Date(a.generated_at)
+    )
 
   const filteredEmails = emails.filter(e => {
     if (!emailSearch.trim()) return true
@@ -620,14 +656,19 @@ export default function AdminReportsPage() {
   const typeColor = (t) => EMAIL_TYPE_CONFIG[t]?.color || 'muted'
   const typeLabel = (t) => EMAIL_TYPE_CONFIG[t]?.label || t
 
-  /* ── DETAIL VIEW ── */
+  /* ── Shared topbar + sidebar props ── */
+  const sharedProps = { sidebarOpen, setSidebarOpen, userInitials, userName, handleLogout, navigate }
+
+  /* ════════════════════════════════
+     DETAIL VIEW
+  ════════════════════════════════ */
   if (viewingJobId !== null) {
     return (
       <>
         <style>{S}</style>
         <div className="rp-root">
           <div className={`rp-overlay${sidebarOpen ? ' show' : ''}`} onClick={() => setSidebarOpen(false)}/>
-          <Sidebar {...{ sidebarOpen, setSidebarOpen, userInitials, userName, handleLogout, navigate }}/>
+          <Sidebar {...sharedProps}/>
           <div className="rp-main">
             <div className="rp-topbar">
               <div className="rp-topbar-left">
@@ -652,16 +693,19 @@ export default function AdminReportsPage() {
     )
   }
 
-  /* ── LIST VIEW ── */
+  /* ════════════════════════════════
+     LIST VIEW
+  ════════════════════════════════ */
   return (
     <>
       <style>{S}</style>
       <div className="rp-root">
 
         <div className={`rp-overlay${sidebarOpen ? ' show' : ''}`} onClick={() => setSidebarOpen(false)}/>
-        <Sidebar {...{ sidebarOpen, setSidebarOpen, userInitials, userName, handleLogout, navigate }}/>
+        <Sidebar {...sharedProps}/>
 
         <div className="rp-main">
+          {/* TOPBAR */}
           <div className="rp-topbar">
             <div className="rp-topbar-left">
               <button className="rp-hamburger" type="button" onClick={() => setSidebarOpen(o => !o)}>
@@ -713,7 +757,7 @@ export default function AdminReportsPage() {
 
             {/* SECTION TABS */}
             <div className="rp-section-tabs">
-              {REPORT_SECTION_TABS.map(t => (
+              {SECTION_TABS.map(t => (
                 <button key={t.key} type="button"
                   className={`rp-section-tab${sectionTab === t.key ? ' active' : ''}`}
                   onClick={() => setSectionTab(t.key)}>
@@ -727,28 +771,28 @@ export default function AdminReportsPage() {
               <>
                 {reportsErr && <div className="rp-error">{reportsErr}</div>}
 
-                {/* ── SERVICE TYPE FILTER TABS (built from DB data) ── */}
-                <div className="rp-tabs-wrap">
-                  <div className="rp-tabs">
+                {/* Service filter tabs — only shows types that exist in data */}
+                <div className="rp-filter-wrap">
+                  <div className="rp-filter-tabs">
                     {filterTabs.map(tab => (
                       <button key={tab.key} type="button"
-                        className={`rp-tab${serviceFilter === tab.key ? ` active tab-${tab.color}` : ''}`}
+                        className={`rp-filter-tab${serviceFilter === tab.key ? ` active c-${tab.color}` : ''}`}
                         onClick={() => setServiceFilter(tab.key)}>
                         {tab.label}
-                        <span className="rp-tab-count">{countForTab(tab.key)}</span>
+                        <span className="rp-ftab-count">{countForTab(tab.key)}</span>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* CONTROLS — search + sort (only Newest/Oldest) */}
+                {/* Controls */}
                 <div className="rp-controls">
                   <div className="rp-search-wrap">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                     <input className="rp-search"
-                      placeholder="Search by customer name, email, job…"
+                      placeholder="Search by customer name, email, job ID…"
                       value={pdfSearch} onChange={e => setPdfSearch(e.target.value)}
                     />
                   </div>
@@ -758,14 +802,15 @@ export default function AdminReportsPage() {
                   </select>
                 </div>
 
-                {/* LIST HEADER */}
                 <div className="rp-list-hdr">
                   <span className="rp-list-title">
                     {filtered.length} report{filtered.length !== 1 ? 's' : ''}
                     {serviceFilter !== 'all' && ` · ${getServiceCfg(serviceFilter).label}`}
                     {pdfSearch ? ` matching "${pdfSearch}"` : ''}
                   </span>
-                  <span className="rp-list-meta">{sortBy === 'date_desc' ? 'Newest First' : 'Oldest First'}</span>
+                  <span className="rp-list-meta">
+                    {sortBy === 'date_desc' ? 'Newest First' : 'Oldest First'}
+                  </span>
                 </div>
 
                 {reportsLoad ? (
@@ -778,87 +823,89 @@ export default function AdminReportsPage() {
                       {pdfSearch
                         ? `No reports match "${pdfSearch}"`
                         : serviceFilter !== 'all'
-                        ? `No ${getServiceCfg(serviceFilter).label} reports found.`
-                        : 'Reports are generated automatically when a job is completed.'}
+                        ? `No ${getServiceCfg(serviceFilter).label} reports yet.`
+                        : 'Reports generate automatically when a job is completed.'}
                     </div>
                   </div>
-                ) : (
-                  filtered.map(r => {
-                    const expired   = isExpired(r.token_expires_at)
-                    const jobId     = r.job_id ?? r.job
-                    const custName  = r.customer_name || r.customer?.name || ''
-                    const custEmail = r.customer_email || ''
-                    const svcType   = r.service_type || r.job_service_type || ''
-                    const svcCfg    = getServiceCfg(svcType)
-                    const avatarCls = expired ? 'expired' : svcCfg.color
+                ) : filtered.map(r => {
+                  const expired   = isExpired(r.token_expires_at)
+                  const jobId     = r.job_id ?? r.job
+                  const custName  = r.customer_name || ''
+                  const custEmail = r.customer_email || ''
+                  const svcCfg    = getServiceCfg(r.service_type || '')
+                  const avatarCls = expired ? 'expired' : svcCfg.color
 
-                    return (
-                      <div key={r.id} className="rp-card">
-                        <div className={`rp-avatar ${avatarCls}`}>{svcCfg.abbr}</div>
+                  return (
+                    <div key={r.id} className="rp-card"
+                      onClick={() => setViewingJobId(jobId)}>
+                      <div className={`rp-avatar ${avatarCls}`}>{svcCfg.abbr}</div>
 
-                        <div className="rp-body">
-                          <div className="rp-name-row">
-                            <span className="rp-name">{custName || `Job #${jobId}`}</span>
-                            {custName && <span className="rp-job-id">Job #{jobId}</span>}
-                            <span className={`rp-service-badge ${svcCfg.color}`}>{svcCfg.label}</span>
-                            <span className={`rp-badge ${expired ? 'red' : 'green'}`}>
-                              {expired ? 'Link Expired' : 'Link Valid'}
-                            </span>
-                            {r.includes_signature && <span className="rp-badge green">✓ Signed</span>}
-                          </div>
-                          <div className="rp-details">
-                            {custEmail && (
-                              <span className="rp-detail">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                </svg>
-                                {custEmail}
-                              </span>
-                            )}
-                            {r.file_size_kb > 0 && (
-                              <span className="rp-detail">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                                {r.file_size_kb} KB
-                              </span>
-                            )}
-                          </div>
-                          <div className="rp-meta-row">
-                            <span className="rp-meta">Generated <span>{fmtDateTime(r.generated_at)}</span></span>
-                            <span className="rp-meta">Expires <span>{fmtDate(r.token_expires_at)}</span></span>
-                            {r.generated_by_name && (
-                              <span className="rp-meta">By <span>{r.generated_by_name}</span></span>
-                            )}
-                          </div>
+                      <div className="rp-body">
+                        <div className="rp-name-row">
+                          <span className="rp-name">{custName || `Job #${jobId}`}</span>
+                          {custName && <span className="rp-job-id">Job #{jobId}</span>}
+                          <span className={`rp-svc-badge ${svcCfg.color}`}>{svcCfg.label}</span>
+                          <span className={`rp-badge ${expired ? 'red' : 'green'}`}>
+                            {expired ? 'Link Expired' : 'Link Valid'}
+                          </span>
+                          {r.includes_signature && <span className="rp-badge green">✓ Signed</span>}
                         </div>
-
-                        <div className="rp-actions">
-                          <button className="rp-btn-view" type="button" onClick={() => setViewingJobId(jobId)}>
-                            <svg viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                            </svg>
-                            View
-                          </button>
-                          {r.report_file && !expired && (
-                            <a href={r.report_file} target="_blank" rel="noopener noreferrer" className="rp-btn-download">
-                              <svg viewBox="0 0 24 24">
+                        <div className="rp-details">
+                          {custEmail && (
+                            <span className="rp-detail">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round"
-                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                               </svg>
-                              PDF
-                            </a>
+                              {custEmail}
+                            </span>
                           )}
-                          <button className="rp-btn-regen" type="button"
-                            onClick={() => handleRegen(jobId)} disabled={regenId === jobId}>
-                            {regenId === jobId ? 'Queuing…' : 'Regenerate'}
-                          </button>
+                          {r.file_size_kb > 0 && (
+                            <span className="rp-detail">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                              </svg>
+                              {r.file_size_kb} KB
+                            </span>
+                          )}
+                        </div>
+                        <div className="rp-meta-row">
+                          <span className="rp-meta">Generated <span>{fmtDateTime(r.generated_at)}</span></span>
+                          <span className="rp-meta">Expires <span>{fmtDate(r.token_expires_at)}</span></span>
+                          {r.generated_by_name && (
+                            <span className="rp-meta">By <span>{r.generated_by_name}</span></span>
+                          )}
                         </div>
                       </div>
-                    )
-                  })
-                )}
+
+                      <div className="rp-actions">
+                        <button className="rp-btn-view" type="button"
+                          onClick={e => { e.stopPropagation(); setViewingJobId(jobId) }}>
+                          <svg viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                          </svg>
+                          View
+                        </button>
+                        {r.report_file && !expired && (
+                          <a href={r.report_file} target="_blank" rel="noopener noreferrer"
+                            className="rp-btn-dl" onClick={e => e.stopPropagation()}>
+                            <svg viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                            PDF
+                          </a>
+                        )}
+                        <button className="rp-btn-regen" type="button"
+                          onClick={e => handleRegen(e, jobId)} disabled={regenId === jobId}>
+                          {regenId === jobId ? 'Queuing…' : 'Regenerate'}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
               </>
             )}
 
@@ -884,10 +931,12 @@ export default function AdminReportsPage() {
                     <option value="retrying">Retrying</option>
                   </select>
                 </div>
+
                 <div className="rp-list-hdr">
                   <span className="rp-list-title">{filteredEmails.length} email{filteredEmails.length !== 1 ? 's' : ''}</span>
                   <span className="rp-list-meta">Newest First</span>
                 </div>
+
                 {emailsLoad ? (
                   <div className="rp-loading"><div className="rp-spinner"/>Loading email logs…</div>
                 ) : filteredEmails.length === 0 ? (
@@ -898,49 +947,49 @@ export default function AdminReportsPage() {
                       {emailFilter !== 'all' ? `No ${emailFilter} emails found.` : 'No emails sent yet.'}
                     </div>
                   </div>
-                ) : (
-                  filteredEmails.map(e => {
-                    const sc = EMAIL_STATUS_CONFIG[e.status]?.color || 'muted'
-                    const tc = typeColor(e.email_type)
-                    return (
-                      <div key={e.id} className="rp-email-card">
-                        <div className={`rp-email-icon ${sc}`}>
-                          <svg viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round"
-                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                          </svg>
+                ) : filteredEmails.map(e => {
+                  const sc = EMAIL_STATUS_CONFIG[e.status]?.color || 'muted'
+                  const tc = typeColor(e.email_type)
+                  return (
+                    <div key={e.id} className="rp-email-card">
+                      <div className={`rp-email-icon ${sc}`}>
+                        <svg viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round"
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                      </div>
+                      <div className="rp-email-body">
+                        <div className="rp-email-title-row">
+                          <span className="rp-email-to">{e.recipient_name || e.recipient_email}</span>
+                          <span className={`rp-badge ${sc}`}>{EMAIL_STATUS_CONFIG[e.status]?.label || e.status}</span>
+                          <span className={`rp-badge ${tc}`}>{typeLabel(e.email_type)}</span>
+                          {e.pdf_attached && <span className="rp-badge muted">📎 PDF</span>}
                         </div>
-                        <div className="rp-email-body">
-                          <div className="rp-email-title-row">
-                            <span className="rp-email-to">{e.recipient_name || e.recipient_email}</span>
-                            <span className={`rp-badge ${sc}`}>{EMAIL_STATUS_CONFIG[e.status]?.label || e.status}</span>
-                            <span className={`rp-badge ${tc}`}>{typeLabel(e.email_type)}</span>
-                            {e.pdf_attached && <span className="rp-badge muted">📎 PDF</span>}
-                          </div>
-                          <div className="rp-email-subject">{e.subject || '—'}</div>
-                          <div className="rp-email-meta">
-                            <span className="rp-email-detail">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                              </svg>
-                              {e.recipient_email}
-                            </span>
-                            <span className="rp-email-detail">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                              </svg>
-                              {fmtDateTime(e.sent_at)}
-                            </span>
-                            {e.job_id && <span className="rp-email-detail">Job #{e.job_id}</span>}
-                            {e.error_message && (
-                              <span style={{fontSize:11.5,color:'var(--red)'}}>⚠ {e.error_message}</span>
-                            )}
-                          </div>
+                        <div className="rp-email-subject">{e.subject || '—'}</div>
+                        <div className="rp-email-meta">
+                          <span className="rp-email-detail">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round"
+                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            {e.recipient_email}
+                          </span>
+                          <span className="rp-email-detail">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {fmtDateTime(e.sent_at)}
+                          </span>
+                          {e.job_id && <span className="rp-email-detail">Job #{e.job_id}</span>}
+                          {e.error_message && (
+                            <span style={{fontSize:11.5,color:'var(--red)'}}>⚠ {e.error_message}</span>
+                          )}
                         </div>
                       </div>
-                    )
-                  })
-                )}
+                    </div>
+                  )
+                })}
               </>
             )}
 

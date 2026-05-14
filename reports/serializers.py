@@ -11,19 +11,12 @@ from .models import PDFReport, EmailLog
 # =============================================================================
 
 class PDFReportSerializer(serializers.ModelSerializer):
-    """
-    Full PDF report details.
-    Used by Admin/Supervisor (UC-14).
-    """
-    job_uuid         = serializers.UUIDField(
-        source='job.job_uuid', read_only=True
-    )
-    customer_name    = serializers.CharField(
-        source='job.customer.name', read_only=True
-    )
-    customer_email   = serializers.CharField(
-        source='job.customer.email', read_only=True
-    )
+    job_uuid          = serializers.UUIDField(source='job.job_uuid', read_only=True)
+    customer_name     = serializers.CharField(source='job.customer.name', read_only=True)
+    customer_email    = serializers.CharField(source='job.customer.email', read_only=True)
+    # ADD THESE TWO:
+    service_type      = serializers.CharField(source='job.service_type', read_only=True)
+    site_address      = serializers.CharField(source='job.site_address', read_only=True)
     generated_by_name = serializers.SerializerMethodField()
     is_expired        = serializers.SerializerMethodField()
 
@@ -31,12 +24,14 @@ class PDFReportSerializer(serializers.ModelSerializer):
         model = PDFReport
         fields = [
             'id', 'job', 'job_uuid', 'customer_name', 'customer_email',
+            'service_type', 'site_address',           # ← ADD THESE
             'report_file', 'generated_at', 'generated_by',
             'generated_by_name', 'file_size_kb', 'includes_signature',
             'download_token', 'token_expires_at', 'is_expired'
         ]
         read_only_fields = [
             'id', 'job_uuid', 'customer_name', 'customer_email',
+            'service_type', 'site_address',
             'generated_at', 'download_token', 'is_expired'
         ]
 
@@ -46,7 +41,6 @@ class PDFReportSerializer(serializers.ModelSerializer):
         return 'Auto-generated'
 
     def get_is_expired(self, obj):
-        # Check if the secure download token has expired (PDF-05 test case)
         return timezone.now() > obj.token_expires_at
 
 

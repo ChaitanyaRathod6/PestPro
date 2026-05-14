@@ -23,16 +23,15 @@ from accounts.views import IsAdminOrSupervisor
 # =============================================================================
 
 class PDFReportListView(APIView):
-    """
-    List all PDF reports.
-    Admin and Supervisor only (RBAC-07).
-    """
     permission_classes = [IsAdminOrSupervisor]
 
     def get(self, request):
-        reports = PDFReport.objects.all().order_by('-generated_at')
+        reports = PDFReport.objects.select_related(
+            'job',
+            'job__customer',        # ← needed for customer_name, customer_email
+            'generated_by',
+        ).order_by('-generated_at')
 
-        # Filter by job if provided
         job_id = request.query_params.get('job_id')
         if job_id:
             reports = reports.filter(job_id=job_id)

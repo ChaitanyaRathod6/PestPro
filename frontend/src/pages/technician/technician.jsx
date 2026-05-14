@@ -1527,7 +1527,7 @@ const equipGoodCount = equip.filter(e => e.pct >= 60).length
   if (n.id === 'dashboard') navigate('/technician')
   if (n.id === 'jobs') navigate('/technician/jobs')   // ✅ THIS IS YOUR MY JOBS PAGE
   if (n.id === 'route') navigate('/technician')       // adjust if you have route page
-  if (n.id === 'perf') navigate('/technician')        // optional
+  if (n.id === 'perf') navigate('/technician/performance')        // optional
   if (n.id === 'customers') navigate('/technician')   // optional
   if (n.id === 'settings') navigate('/technician')    // optional
 }}

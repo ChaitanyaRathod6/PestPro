@@ -508,3 +508,65 @@ class JobSignatureView(APIView):
         job.signed_by = signature
         job.save()
         return Response({'message': 'Signature saved successfully.'})
+    
+
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Avg, Count, Q
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+
+class TechnicianPerformanceView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tech   = request.user
+        period = request.query_params.get('period', 'month')
+        now    = timezone.now()
+
+        if period == 'week':
+            start = now - timedelta(days=7)
+        elif period == 'custom':
+            start_str = request.query_params.get('start')
+            start = timezone.datetime.fromisoformat(start_str) if start_str else now - timedelta(days=30)
+        else:
+            start = now - timedelta(days=30)
+
+        all_jobs       = ServiceJob.objects.filter(assigned_technician=tech, scheduled_datetime__gte=start)
+        completed_jobs = all_jobs.filter(status__in=['completed', 'report_sent'])
+        total_cnt      = all_jobs.count()
+        completed_cnt  = completed_jobs.count()
+
+        on_time_cnt = 0
+        durations   = []
+        for job in completed_jobs:
+            if job.completed_at and job.scheduled_datetime:
+                if job.completed_at <= job.scheduled_datetime:
+                    on_time_cnt += 1
+            if job.completed_at and job.started_at:
+                durations.append((job.completed_at - job.started_at).total_seconds() / 60)
+
+        on_time_rate = round((on_time_cnt / completed_cnt * 100) if completed_cnt else 0, 1)
+        avg_mins     = round(sum(durations) / len(durations)) if durations else None
+
+        obs_count    = sum(job.observations.count()   for job in all_jobs)
+        alerts_count = sum(job.smart_alerts.count()   for job in all_jobs)
+
+        recent_jobs = list(
+            all_jobs.order_by('-scheduled_datetime')[:5].values(
+                'id', 'status', 'service_type',
+                'scheduled_datetime', 'completed_at', 'site_address'
+            )
+        )
+
+        return Response({
+            'period':                period,
+            'total_jobs':            total_cnt,
+            'completed_jobs':        completed_cnt,
+            'on_time_rate':          on_time_rate,
+            'avg_completion_min':    avg_mins,
+            'observations_recorded': obs_count,
+            'alerts_triggered':      alerts_count,
+            'recent_jobs':           recent_jobs,
+        })
