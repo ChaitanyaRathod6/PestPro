@@ -22,6 +22,9 @@ import AdminAlertDetailPage from './pages/admin/AdminSmartAlertDetailPge'
 import AdminReportsPage from './pages/admin/AdminReportsPage'
 import AdminReportDetailPage from './pages/admin/AdminReportDetailPage'
 import TechnicianPerformancePage from './pages/technician/PerformancePage'
+import TechnicianCustomersPage from './pages/technician/TechnicianCustomerPage'
+import TechnicianCustomerDetailPage from './pages/technician/TechnicianCustomerDetailPage'
+import TechnicianCustomerDetailPageCombine from './pages/technician/tech'
 
 function App() {
   return (
@@ -176,6 +179,34 @@ function App() {
     </ProtectedRoute>
   }
 />
+
+<Route
+  path="/technician/customers"
+  element={
+    <ProtectedRoute allowedRoles={["technician"]}>
+      <TechnicianCustomersPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/technician/customers/:id"
+  element={
+    <ProtectedRoute allowedRoles={["technician"]}>
+      <TechnicianCustomerDetailPage />
+    </ProtectedRoute>
+  }
+/>
+
+
+{/* <Route
+  path="/technician/customerscombine/:id"
+  element={
+    <ProtectedRoute allowedRoles={["technician"]}>
+      <TechnicianCustomerDetailPageCombine />
+    </ProtectedRoute>
+  }
+/> */}
 
           {/* Customer dashboard */}
           <Route path="/customer" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard/></ProtectedRoute>} />

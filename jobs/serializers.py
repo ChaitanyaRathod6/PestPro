@@ -9,10 +9,15 @@ class ServiceJobCreateSerializer(serializers.ModelSerializer):
     Used by Admin and Supervisor to create a new service job (UC-04).
     Both roles can create jobs — Gap #3 fix from Data Dictionary v2.
     """
+    customer_name = serializers.CharField(
+        source='customer.name', read_only=True
+    )
+    technician_name = serializers.SerializerMethodField()
+
     class Meta:
         model = ServiceJob
         fields = [
-            'id', 'job_uuid', 'customer', 'assigned_technician',
+            'id', 'job_uuid', 'customer','customer_name', 'assigned_technician','technician_name',
             'site_address', 'service_type', 'scheduled_datetime',
             'customer_sign_required', 'completion_notes',
         ]
@@ -55,13 +60,14 @@ class ServiceJobListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ServiceJob
+        # FIXED
         fields = [
-            'id', 'job_uuid', 'customer_name', 'technician_name',
-            'assigned_technician',   # ✅ ADD THIS
-            'service_type', 'status', 'scheduled_datetime',
-            'site_address',          # ✅ ADD THIS TOO
-            'started_at', 'completed_at', 'is_report_sent'
-        ]
+    'id', 'job_uuid', 'customer', 'customer_name', 'technician_name',
+    'assigned_technician',
+    'service_type', 'status', 'scheduled_datetime',
+    'site_address',
+    'started_at', 'completed_at', 'is_report_sent'
+]
 
     def get_technician_name(self, obj):
         if obj.assigned_technician:
