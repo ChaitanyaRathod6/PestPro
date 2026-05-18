@@ -1404,7 +1404,14 @@ export default function AdminAlertsPage() {
             {navItems.map(n => (
               <div key={n.id}
                 className={`al-sb-item${n.id === 'alerts' ? ' active' : ''}`}
-                onClick={() => { setSidebarOpen(false); navigate(n.path) }}
+                onClick={() => {
+  setSidebarOpen(false)
+  if (n.id === 'dashboard') {
+    navigate(user?.role === 'supervisor' ? '/supervisor' : '/dashboard')
+  } else {
+    navigate(n.path)
+  }
+}}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d={n.d}/>
@@ -1417,7 +1424,7 @@ export default function AdminAlertsPage() {
             <div className="al-sb-avatar">{userInitials}</div>
             <div style={{flex:1,minWidth:0}}>
               <div className="al-sb-uname">{userName}</div>
-              <div className="al-sb-urole">Administrator</div>
+              <div className="al-sb-urole">{user?.role === 'supervisor' ? 'Supervisor' : 'Administrator'}</div>
             </div>
             <button className="al-sb-logout" type="button" onClick={handleLogout} title="Logout">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -170,7 +170,7 @@ class StaffListView(generics.ListAPIView):
     List all staff members.
     Admin only.
     """
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAdminOrSupervisor]
     serializer_class   = UserProfileSerializer
 
     def get_queryset(self):

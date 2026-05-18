@@ -21,5 +21,13 @@ urlpatterns = [
     path('supervisor/dashboard/', views.supervisor_dashboard_api, name='supervisor_api'),
     path('technician/dashboard/', views.technician_dashboard_api, name='technician-dashboard'),
     path('jobs/<int:pk>/signature/', views.JobSignatureView.as_view(), name='job-signature'),
+
+    # Reassign technician
+    path('jobs/<int:pk>/reassign/', views.JobReassignView.as_view(), name='job-reassign'),
+
+    # Add supervisor note
+    path('jobs/<int:pk>/notes/', views.JobNotesView.as_view(), name='job-notes'),
+
+    path('staff/', views.StaffListView.as_view(), name='staff-list'),
 ]
 

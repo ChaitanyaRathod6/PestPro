@@ -25,6 +25,7 @@ import TechnicianPerformancePage from './pages/technician/PerformancePage'
 import TechnicianCustomersPage from './pages/technician/TechnicianCustomerPage'
 import TechnicianCustomerDetailPage from './pages/technician/TechnicianCustomerDetailPage'
 import TechnicianCustomerDetailPageCombine from './pages/technician/tech'
+import SupervisorJobDetailPage from './pages/supervisor/SupervisorJobDetailPage'
 
 function App() {
   return (
@@ -33,196 +34,48 @@ function App() {
         <Routes>
 
           {/* Public routes */}
-          <Route path="/"        element={<Navigate to="/login" replace />} />
-          <Route path="/login"   element={<LoginPage />} />
-          <Route path="/signup"  element={<SignupPage />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Admin dashboard */}
-          <Route
-  path="/dashboard"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminDashboard />
-    </ProtectedRoute>
-  }
-/>
-          {/* Admin Jobs */}
-<Route
-  path="/dashboard/jobs"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminJobsPage />
-    </ProtectedRoute>
-  }
-/>
+          <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/dashboard/jobs" element={<ProtectedRoute allowedRoles={["admin"]}><AdminJobsPage /></ProtectedRoute>} />
+          <Route path="/dashboard/jobs/:id" element={<ProtectedRoute allowedRoles={["admin"]}><AdminJobDetailPage /></ProtectedRoute>} />
+          <Route path="/dashboard/customers" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCustomersPage /></ProtectedRoute>} />
+          <Route path="/dashboard/customers/:id" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCustomerDetailPage /></ProtectedRoute>} />
+          <Route path="/dashboard/technicians" element={<ProtectedRoute allowedRoles={["admin"]}><AdminTechniciansPage /></ProtectedRoute>} />
+          <Route path="/dashboard/technicians/:id" element={<ProtectedRoute allowedRoles={["admin"]}><AdminTechnicianDetailPage /></ProtectedRoute>} />
 
-{/* <Route
-  path="/admin/jobs/:id"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <JobDetailPage />
-    </ProtectedRoute>
-  }
-/> */}
-<Route
-  path="/dashboard/jobs/:id"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminJobDetailPage />
-    </ProtectedRoute>
-  }
-/>
-
-
-
-<Route
-  path="/dashboard/customers"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminCustomersPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/dashboard/customers/:id"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminCustomerDetailPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/dashboard/technicians/:id"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminTechnicianDetailPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route 
-  path="/dashboard/alerts"  
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminAlertsPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/dashboard/alerts/:id"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminAlertDetailPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/dashboard/reports"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminReportsPage />
-    </ProtectedRoute>
-  }
-/>
+          {/* Shared admin + supervisor routes */}
+          <Route path="/dashboard/alerts" element={<ProtectedRoute allowedRoles={["admin", "supervisor"]}><AdminAlertsPage /></ProtectedRoute>} />
+          <Route path="/dashboard/alerts/:id" element={<ProtectedRoute allowedRoles={["admin", "supervisor"]}><AdminAlertDetailPage /></ProtectedRoute>} />
+          <Route path="/dashboard/reports" element={<ProtectedRoute allowedRoles={["admin", "supervisor"]}><AdminReportsPage /></ProtectedRoute>} />
+          <Route path="/dashboard/reports/:id" element={<ProtectedRoute allowedRoles={["admin", "supervisor"]}><AdminReportDetailPage /></ProtectedRoute>} />
 
           {/* Supervisor dashboard */}
-          <Route path="/supervisor" element={<ProtectedRoute allowedRoles={["supervisor"]}><SupervisorDashboard/></ProtectedRoute>} />
+          <Route path="/supervisor" element={<ProtectedRoute allowedRoles={["supervisor"]}><SupervisorDashboard /></ProtectedRoute>} />
+          <Route path="/supervisor/jobs" element={<ProtectedRoute allowedRoles={["supervisor"]}><SupervisorJobDetailPage /></ProtectedRoute>} />
 
-          {/* Technician dashboard */}
-          <Route path="/technician" element={<ProtectedRoute allowedRoles={["technician"]}><TechnicianDashboard/></ProtectedRoute>} />
-          <Route
-  path="/technician/jobs"
-  element={
-    <ProtectedRoute allowedRoles={["technician"]}>
-      <MyJobsPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/technician/jobs/:id"
-  element={
-    <ProtectedRoute allowedRoles={["technician"]}>
-      <JobDetailPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/dashboard/technicians"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminTechniciansPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/dashboard/reports/:id"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminReportDetailPage />
-    </ProtectedRoute>
-  }
-/>
-      
-<Route
-  path="/technician/performance"
-  element={
-    <ProtectedRoute allowedRoles={["technician"]}>
-      <TechnicianPerformancePage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/technician/customers"
-  element={
-    <ProtectedRoute allowedRoles={["technician"]}>
-      <TechnicianCustomersPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/technician/customers/:id"
-  element={
-    <ProtectedRoute allowedRoles={["technician"]}>
-      <TechnicianCustomerDetailPage />
-    </ProtectedRoute>
-  }
-/>
-
-
-{/* <Route
-  path="/technician/customerscombine/:id"
-  element={
-    <ProtectedRoute allowedRoles={["technician"]}>
-      <TechnicianCustomerDetailPageCombine />
-    </ProtectedRoute>
-  }
-/> */}
+          {/* Technician routes */}
+          <Route path="/technician" element={<ProtectedRoute allowedRoles={["technician"]}><TechnicianDashboard /></ProtectedRoute>} />
+          <Route path="/technician/jobs" element={<ProtectedRoute allowedRoles={["technician"]}><MyJobsPage /></ProtectedRoute>} />
+          <Route path="/technician/jobs/:id" element={<ProtectedRoute allowedRoles={["technician"]}><JobDetailPage /></ProtectedRoute>} />
+          <Route path="/technician/performance" element={<ProtectedRoute allowedRoles={["technician"]}><TechnicianPerformancePage /></ProtectedRoute>} />
+          <Route path="/technician/customers" element={<ProtectedRoute allowedRoles={["technician"]}><TechnicianCustomersPage /></ProtectedRoute>} />
+          <Route path="/technician/customers/:id" element={<ProtectedRoute allowedRoles={["technician"]}><TechnicianCustomerDetailPage /></ProtectedRoute>} />
 
           {/* Customer dashboard */}
-          <Route path="/customer" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard/></ProtectedRoute>} />
-
-          {/* Customer OTP login (public) */}
-          <Route path="/customer-login" element={<CustomerLogin/>} />
+          <Route path="/customer" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard /></ProtectedRoute>} />
+          <Route path="/customer-login" element={<CustomerLogin />} />
 
           {/* Unauthorized */}
-          <Route
-            path="/unauthorized"
-            element={
-              <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-                <h1 className="text-2xl">Access Denied</h1>
-              </div>
-            }
-          />
+          <Route path="/unauthorized" element={
+            <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+              <h1 className="text-2xl">Access Denied</h1>
+            </div>
+          } />
 
         </Routes>
       </BrowserRouter>

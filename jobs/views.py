@@ -570,3 +570,66 @@ class TechnicianPerformanceView(APIView):
             'alerts_triggered':      alerts_count,
             'recent_jobs':           recent_jobs,
         })
+    
+
+
+class JobReassignView(APIView):
+    permission_classes = [IsAdminOrSupervisor]
+
+    def patch(self, request, pk):
+        try:
+            job = ServiceJob.objects.get(pk=pk)
+        except ServiceJob.DoesNotExist:
+            return Response({'error': 'Job not found.'}, status=404)
+
+        technician_id = request.data.get('technician_id')
+        if not technician_id:
+            return Response({'error': 'technician_id is required.'}, status=400)
+
+        # FIX — use get_user_model instead of direct import
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        try:
+            tech = User.objects.get(pk=technician_id, role='technician')
+        except User.DoesNotExist:
+            return Response({'error': 'Technician not found.'}, status=404)
+
+        job.assigned_technician = tech
+        job.save(update_fields=['assigned_technician'])
+        return Response({
+            'message': 'Technician reassigned successfully.',
+            'job_id': job.id,
+            'technician_name': tech.get_full_name() or tech.username,
+        })
+
+
+class JobNotesView(APIView):
+    permission_classes = [IsAdminOrSupervisor]
+
+    def patch(self, request, pk):
+        try:
+            job = ServiceJob.objects.get(pk=pk)
+        except ServiceJob.DoesNotExist:
+            return Response({'error': 'Job not found.'}, status=404)
+
+        notes = request.data.get('completion_notes', '')
+        job.completion_notes = notes
+        job.save(update_fields=['completion_notes'])
+        return Response({'message': 'Notes saved.', 'completion_notes': notes})  
+
+
+class StaffListView(APIView):
+    permission_classes = [IsAdminOrSupervisor]
+
+    def get(self, request):
+        from accounts.models import CustomUser
+        technicians = CustomUser.objects.filter(role='technician', is_active=True)
+        data = [
+            {
+                'id': t.id,
+                'name': t.get_full_name() or t.username,
+                'username': t.username,
+            }
+            for t in technicians
+        ]
+        return Response(data)     

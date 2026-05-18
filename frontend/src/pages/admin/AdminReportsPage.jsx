@@ -37,6 +37,7 @@ const fmtDateTime = (dt) => {
 const isExpired = (dt) => dt && new Date(dt) < new Date()
 const AUTO_REFRESH_SECS = 30
 
+
 /* ─────────────────────────────────────────────
    SERVICE TYPE CONFIG
 ───────────────────────────────────────────── */
@@ -418,7 +419,7 @@ const S = `
 /* ═══════════════════════════════
    SIDEBAR COMPONENT
 ═══════════════════════════════ */
-function Sidebar({ sidebarOpen, setSidebarOpen, userInitials, userName, handleLogout, navigate }) {
+function Sidebar({ sidebarOpen, setSidebarOpen, userInitials, userName, handleLogout, navigate, user }) {
   return (
     <aside className={`rp-sidebar${sidebarOpen ? ' open' : ''}`}>
       <div className="rp-sb-logo">
@@ -430,7 +431,15 @@ function Sidebar({ sidebarOpen, setSidebarOpen, userInitials, userName, handleLo
       <nav className="rp-sb-nav">
         {navItems.map(n => (
           <div key={n.id} className={`rp-sb-item${n.id === 'reports' ? ' active' : ''}`}
-            onClick={() => { setSidebarOpen(false); navigate(n.path) }}>
+            onClick={() => {
+  setSidebarOpen(false)
+  if (n.id === 'dashboard') {
+    navigate(user?.role === 'supervisor' ? '/supervisor' : '/dashboard')
+  } else {
+    navigate(n.path)
+  }
+}}>
+  
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d={n.d}/>
             </svg>
@@ -442,7 +451,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, userInitials, userName, handleLo
         <div className="rp-sb-avatar">{userInitials}</div>
         <div style={{flex:1,minWidth:0}}>
           <div className="rp-sb-uname">{userName}</div>
-          <div className="rp-sb-urole">Administrator</div>
+          <div className="rp-sb-urole">{user?.role === 'supervisor' ? 'Supervisor' : 'Administrator'}</div>
         </div>
         <button className="rp-sb-logout" type="button" onClick={handleLogout} title="Logout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -657,7 +666,7 @@ export default function AdminReportsPage() {
   const typeLabel = (t) => EMAIL_TYPE_CONFIG[t]?.label || t
 
   /* ── Shared topbar + sidebar props ── */
-  const sharedProps = { sidebarOpen, setSidebarOpen, userInitials, userName, handleLogout, navigate }
+  const sharedProps = { sidebarOpen, setSidebarOpen, userInitials, userName, handleLogout, navigate, user }
 
   /* ════════════════════════════════
      DETAIL VIEW
