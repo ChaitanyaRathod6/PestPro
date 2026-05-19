@@ -29,5 +29,7 @@ urlpatterns = [
     path('jobs/<int:pk>/notes/', views.JobNotesView.as_view(), name='job-notes'),
 
     path('staff/', views.StaffListView.as_view(), name='staff-list'),
+
+    path('jobs/staff/<int:staff_id>/stats/', views.staff_detail_stats, name='staff-stats'),
 ]
 

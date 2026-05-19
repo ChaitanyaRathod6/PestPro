@@ -228,6 +228,7 @@ export default function AdminTechnicianDetailPage() {
   const [toggleModal, setToggleModal] = useState(false)
   const [toast,       setToast]       = useState(null)
   const [countdown,   setCountdown]   = useState(AUTO_REFRESH_SECS)
+  const [stats, setStats] = useState(null)
 
   const tickRef   = useRef(null)
   const isMounted = useRef(true)
@@ -242,42 +243,73 @@ export default function AdminTechnicianDetailPage() {
 
   /* ── FETCH DATA ── */
   const fetchData = useCallback(async (silent = false) => {
-    if (!silent) setError('')
-    try {
-      // Fetch technician profile
-      const techRes = await api.get(`/staff/${id}/`)
-      if (!isMounted.current) return
-      setTech(techRes.data)
+  if (!silent) setError('')
+  try {
+    const techRes = await api.get(`/staff/${id}/`)
+    if (!isMounted.current) return
+    setTech(techRes.data)
 
-      // Fetch jobs assigned to this technician
-      let fetchedJobs = []
+    const role = techRes.data?.role
+
+    // ── Fetch stats from the new endpoint (works for both supervisor + technician)
+    try {
+      const statsRes = await api.get(`/jobs/staff/${id}/stats/`)
+      if (isMounted.current) setStats(statsRes.data)
+    } catch { /* fail silently — stats are optional */ }
+
+    // ── Fetch jobs based on role
+    let fetchedJobs = []
+
+    if (role === 'supervisor') {
+      // Supervisor — jobs they CREATED
+      try {
+        const r = await api.get('/jobs/')
+        const all = r.data?.results || r.data || []
+        fetchedJobs = all.filter(j =>
+          j.created_by === parseInt(id) ||
+          String(j.created_by) === String(id)
+        )
+      } catch { /* silent */ }
+
+    } else {
+      // Technician — jobs ASSIGNED to them
       try {
         const r = await api.get(`/jobs/technician/${id}/`)
         fetchedJobs = r.data?.results || r.data || []
       } catch {
-        // fallback: fetch all jobs and filter client-side
+        // fallback: fetch all and filter client-side
         try {
           const r = await api.get('/jobs/')
           const all = r.data?.results || r.data || []
           const numId = parseInt(id)
-          fetchedJobs = all.filter(j =>
-            j.assigned_technician === numId ||
-            String(j.assigned_technician) === String(id) ||
-            j.technician_name === techRes.data?.first_name + ' ' + techRes.data?.last_name
-          )
+          const techName = `${techRes.data?.first_name || ''} ${techRes.data?.last_name || ''}`.trim()
+          fetchedJobs = all.filter(j => {
+            const assignedId = typeof j.assigned_technician === 'object'
+              ? j.assigned_technician?.id
+              : j.assigned_technician
+            return (
+              assignedId === numId ||
+              String(assignedId) === String(id) ||
+              j.technician_name === techName ||
+              j.technician_id === numId
+            )
+          })
         } catch { /* silent */ }
       }
-
-      if (!isMounted.current) return
-      const data = fetchedJobs
-setJobs(Array.isArray(data) ? data : data.results || [])
-    } catch (e) {
-      if (!silent && isMounted.current)
-        setError(e.response?.status === 404 ? 'Technician not found.' : 'Failed to load technician details.')
-    } finally {
-      if (isMounted.current) setLoading(false)
     }
-  }, [id])
+
+    if (!isMounted.current) return
+    setJobs(Array.isArray(fetchedJobs) ? fetchedJobs : fetchedJobs.results || [])
+
+  } catch (e) {
+    if (!silent && isMounted.current)
+      setError(e.response?.status === 404
+        ? 'Staff member not found.'
+        : 'Failed to load details.')
+  } finally {
+    if (isMounted.current) setLoading(false)
+  }
+}, [id])
 
   const resetTimer = useCallback(() => {
     clearInterval(tickRef.current)
@@ -332,14 +364,14 @@ setJobs(Array.isArray(data) ? data : data.results || [])
   }
 
   /* ── COMPUTED STATS ── */
-  const totalJobs     = jobs.length
-  const completedJobs = jobs.filter(j => ['completed', 'report_sent'].includes(j.status)).length
-  const activeJobs    = jobs.filter(j => j.status === 'in_progress').length
-  const scheduledJobs = jobs.filter(j => j.status === 'scheduled').length
+  const totalJobs      = stats?.total_jobs     ?? jobs.length
+const completedJobs  = stats?.completed_jobs ?? jobs.filter(j => ['completed','report_sent'].includes(j.status)).length
+const activeJobs     = stats?.active_jobs    ?? jobs.filter(j => j.status === 'in_progress').length
+const scheduledJobs  = stats?.scheduled_jobs ?? jobs.filter(j => j.status === 'scheduled').length
+
   const completionRate = totalJobs > 0 ? Math.round((completedJobs / totalJobs) * 100) : 0
 
-  console.log("JOBS TYPE:", typeof jobs)
-console.log("JOBS VALUE:", jobs)
+  
 
   const techFullName = tech
     ? (tech.full_name || `${tech.first_name || ''} ${tech.last_name || ''}`.trim() || tech.username || `Technician #${id}`)
@@ -461,27 +493,28 @@ console.log("JOBS VALUE:", jobs)
 
                 {/* ── STATS ── */}
                 <div className="atd-stats-row">
-                  <div className="atd-mini-stat">
-                    <div className="atd-mini-label">Total Jobs</div>
-                    <div className="atd-mini-val">{totalJobs}</div>
-                    <div className="atd-mini-sub">All assigned</div>
-                  </div>
-                  <div className="atd-mini-stat">
-                    <div className="atd-mini-label">Completed</div>
-                    <div className="atd-mini-val green">{completedJobs}</div>
-                    <div className="atd-mini-sub">{completionRate}% rate</div>
-                  </div>
-                  <div className="atd-mini-stat">
-                    <div className="atd-mini-label">Active Now</div>
-                    <div className={`atd-mini-val${activeJobs > 0 ? ' blue' : ''}`}>{activeJobs}</div>
-                    <div className="atd-mini-sub">In progress</div>
-                  </div>
-                  <div className="atd-mini-stat">
-                    <div className="atd-mini-label">Scheduled</div>
-                    <div className={`atd-mini-val${scheduledJobs > 0 ? ' amber' : ''}`}>{scheduledJobs}</div>
-                    <div className="atd-mini-sub">Upcoming</div>
-                  </div>
-                </div>
+  <div className="atd-mini-stat">
+    <div className="atd-mini-label">Total Jobs</div>
+    <div className="atd-mini-val">{totalJobs}</div>
+    {/* Shows "All assigned" for technician, "All created" for supervisor */}
+    <div className="atd-mini-sub">{tech?.role === 'supervisor' ? 'All created' : 'All assigned'}</div>
+  </div>
+  <div className="atd-mini-stat">
+    <div className="atd-mini-label">Completed</div>
+    <div className="atd-mini-val green">{completedJobs}</div>
+    <div className="atd-mini-sub">{completionRate}% rate</div>
+  </div>
+  <div className="atd-mini-stat">
+    <div className="atd-mini-label">Active Now</div>
+    <div className={`atd-mini-val${activeJobs > 0 ? ' blue' : ''}`}>{activeJobs}</div>
+    <div className="atd-mini-sub">In progress</div>
+  </div>
+  <div className="atd-mini-stat">
+    <div className="atd-mini-label">Scheduled</div>
+    <div className={`atd-mini-val${scheduledJobs > 0 ? ' amber' : ''}`}>{scheduledJobs}</div>
+    <div className="atd-mini-sub">Upcoming</div>
+  </div>
+</div>
 
                 {/* ── MAIN GRID ── */}
                 <div className="atd-grid">

@@ -234,7 +234,7 @@ class CustomerListCreateView(APIView):
     List all customers or create a new one (UC-12).
     Admin only.
     """
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAdminOrSupervisor]
 
     def get(self, request):
         customers  = Customer.objects.all()

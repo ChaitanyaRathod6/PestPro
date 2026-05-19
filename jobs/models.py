@@ -67,6 +67,16 @@ class ServiceJob(models.Model):
         choices=CREATED_BY_ROLE_CHOICES,
         help_text="Role of the user who created this job. Stored for audit."
     )
+
+
+    # ← ADD THIS:
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='created_jobs',
+        help_text="The staff member who created this job."
+    )
  
     site_address  = models.TextField()
     service_type  = models.CharField(max_length=30, choices=SERVICE_TYPE_CHOICES)

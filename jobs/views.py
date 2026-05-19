@@ -632,4 +632,42 @@ class StaffListView(APIView):
             }
             for t in technicians
         ]
-        return Response(data)     
+        return Response(data) 
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def staff_detail_stats(request, staff_id):
+    """
+    Returns job stats for any staff member.
+    Supervisor  → jobs they CREATED
+    Technician  → jobs ASSIGNED to them
+    """
+    from accounts.models import User
+    try:
+        staff = User.objects.get(pk=staff_id)
+    except User.DoesNotExist:
+        return Response({'error': 'Staff not found.'}, status=404)
+
+    if staff.role == 'supervisor':
+        jobs = ServiceJob.objects.filter(created_by=staff)
+    else:
+        jobs = ServiceJob.objects.filter(assigned_technician=staff)
+
+    total     = jobs.count()
+    completed = jobs.filter(status__in=['completed', 'report_sent']).count()
+    active    = jobs.filter(status='in_progress').count()
+    scheduled = jobs.filter(status='scheduled').count()
+
+    recent = jobs.order_by('-scheduled_datetime')[:5]
+    recent_data = ServiceJobListSerializer(recent, many=True).data
+
+    return Response({
+        'total_jobs':      total,
+        'completed_jobs':  completed,
+        'active_jobs':     active,
+        'scheduled_jobs':  scheduled,
+        'completion_rate': round((completed / total * 100)) if total > 0 else 0,
+        'recent_jobs':     recent_data,
+        'role':            staff.role,
+    })        

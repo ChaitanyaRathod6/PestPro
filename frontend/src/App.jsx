@@ -27,6 +27,7 @@ import TechnicianCustomerDetailPage from './pages/technician/TechnicianCustomerD
 import TechnicianCustomerDetailPageCombine from './pages/technician/tech'
 import SupervisorJobDetailPage from './pages/supervisor/SupervisorJobDetailPage'
 
+
 function App() {
   return (
     <AuthProvider>
@@ -37,6 +38,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/customer-login" element={<CustomerLogin />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Admin dashboard */}

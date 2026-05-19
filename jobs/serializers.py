@@ -13,11 +13,15 @@ class ServiceJobCreateSerializer(serializers.ModelSerializer):
         source='customer.name', read_only=True
     )
     technician_name = serializers.SerializerMethodField()
+    created_by_name = serializers.SerializerMethodField()   # ← ADD
+    created_by_role = serializers.CharField(read_only=True) # ← ADD
+
 
     class Meta:
         model = ServiceJob
         fields = [
             'id', 'job_uuid', 'customer','customer_name', 'assigned_technician','technician_name',
+            'created_by_role', 'created_by_name', 'created_by',  # ← ADD
             'site_address', 'service_type', 'scheduled_datetime',
             'customer_sign_required', 'completion_notes',
         ]
@@ -43,8 +47,15 @@ class ServiceJobCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context.get('request')
         validated_data['created_by_role'] = request.user.role
+        validated_data['created_by']      = request.user   # ← ADD
         validated_data['status'] = 'scheduled'
         return super().create(validated_data)
+    
+    def get_created_by_name(self, obj):
+        if obj.created_by:
+            name = f"{obj.created_by.first_name} {obj.created_by.last_name}".strip()
+            return name or obj.created_by.username
+        return None
 
 
 class ServiceJobListSerializer(serializers.ModelSerializer):
