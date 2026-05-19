@@ -26,21 +26,32 @@ export default function CustomerLogin() {
     }
   }
 
-  const handleVerifyOTP = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    const handleVerifyOTP = async (e) => {
+    if (e) e.preventDefault();
+    if (loading) return; // Prevent double-clicks
+
+    setError('');
+    setLoading(true);
+    
     try {
-      const res = await api.post('/auth/customer/verify-otp/', { email, otp_code: otp })
-      // Store customer session data
-      localStorage.setItem('customer', JSON.stringify(res.data.customer))
-      navigate('/customer')
+      const res = await api.post('/auth/customer/verify-otp/', { 
+        email: email.trim().toLowerCase(), // Normalize email here too
+        otp_code: otp.trim()               // Trim spaces from OTP
+      });
+      
+      if (res.status === 200) {
+        localStorage.setItem('customer', JSON.stringify(res.data.customer));
+        localStorage.setItem('access_token', res.data.access_token);
+        navigate('/customer');
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid or expired OTP. Please try again.')
+      // If the error is "Invalid OTP" but we just got a 200, ignore it
+      setError(err.response?.data?.otp_code?.[0] || err.response?.data?.error || 'Invalid or expired OTP. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
+
 
   const handleResend = async () => {
     setError('')

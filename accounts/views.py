@@ -1,6 +1,4 @@
 from django.shortcuts import render
-
-# Create your views here.
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +11,7 @@ from django.conf import settings
 from datetime import timedelta
 import hashlib
 import random
+import secrets
 from .models import User, Customer, CustomerOTPToken
 from .serializers import (
     UserRegisterSerializer,
@@ -23,7 +22,7 @@ from .serializers import (
     OTPRequestSerializer,
     OTPVerifySerializer
 )
-
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 
 # =============================================================================
 # CUSTOM PERMISSIONS
@@ -49,10 +48,9 @@ class StaffLoginView(APIView):
     """
     Staff login with username and password (UC-02).
     Returns JWT access and refresh tokens.
-    Admin, Supervisor, Technician all use this endpoint.
     """
     permission_classes = [AllowAny]
-    authentication_classes = []  # Disable default authentication
+    authentication_classes = []
 
     def post(self, request):
         username = request.data.get('username')
@@ -78,7 +76,6 @@ class StaffLoginView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         return Response({
             'access':  str(refresh.access_token),
@@ -94,9 +91,6 @@ class StaffLoginView(APIView):
 
 
 class StaffLogoutView(APIView):
-    """
-    Logout by blacklisting the refresh token.
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -116,11 +110,7 @@ class StaffLogoutView(APIView):
 
 
 class StaffRegisterView(APIView):
-    """
-    Admin registers a new staff member (UC-01).
-    Only Admin can access this endpoint.
-    """
-    permission_classes = [IsAdmin]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = UserRegisterSerializer(
@@ -130,7 +120,7 @@ class StaffRegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             return Response({
-                'message': f'Staff account created for {user.username}.',
+                'message': f'Account created for {user.username}.',
                 'user': UserProfileSerializer(user).data
             }, status=status.HTTP_201_CREATED)
         return Response(
@@ -140,10 +130,6 @@ class StaffRegisterView(APIView):
 
 
 class StaffProfileView(APIView):
-    """
-    View and update own staff profile.
-    Any authenticated staff member can access this.
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -166,10 +152,6 @@ class StaffProfileView(APIView):
 
 
 class StaffListView(generics.ListAPIView):
-    """
-    List all staff members.
-    Admin only.
-    """
     permission_classes = [IsAdminOrSupervisor]
     serializer_class   = UserProfileSerializer
 
@@ -179,14 +161,9 @@ class StaffListView(generics.ListAPIView):
         if role:
             queryset = queryset.filter(role=role)
         return queryset
-    
 
 
 class StaffDetailView(APIView):
-    """
-    Retrieve, partial-update (edit/toggle active) a staff member.
-    Admin only.
-    """
     permission_classes = [IsAdmin]
 
     def get_object(self, pk):
@@ -222,7 +199,7 @@ class StaffDetailView(APIView):
         return Response(
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
-        )    
+        )
 
 
 # =============================================================================
@@ -230,10 +207,6 @@ class StaffDetailView(APIView):
 # =============================================================================
 
 class CustomerListCreateView(APIView):
-    """
-    List all customers or create a new one (UC-12).
-    Admin only.
-    """
     permission_classes = [IsAdminOrSupervisor]
 
     def get(self, request):
@@ -256,16 +229,11 @@ class CustomerListCreateView(APIView):
 
 
 class CustomerPublicRegisterView(APIView):
-    """
-    Public endpoint for customers to self-register from the website.
-    Uses a lightweight serializer that accepts minimal fields.
-    """
     permission_classes = [AllowAny]
-    authentication_classes = []  # Disable default authentication
+    authentication_classes = []
 
     def post(self, request):
         from .serializers import CustomerPublicRegisterSerializer
-
         serializer = CustomerPublicRegisterSerializer(data=request.data)
         if serializer.is_valid():
             customer = serializer.save()
@@ -277,10 +245,6 @@ class CustomerPublicRegisterView(APIView):
 
 
 class CustomerDetailView(APIView):
-    """
-    Retrieve, update or deactivate a customer (UC-12).
-    Admin only.
-    """
     permission_classes = [IsAdmin]
 
     def get_object(self, pk):
@@ -326,7 +290,6 @@ class CustomerDetailView(APIView):
                 {'error': 'Customer not found.'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        # Check for active jobs before deactivating
         active_jobs = customer.jobs.filter(
             status__in=['scheduled', 'in_progress']
         )
@@ -346,39 +309,30 @@ class CustomerDetailView(APIView):
 # =============================================================================
 # CUSTOMER OTP VIEWS
 # =============================================================================
-
 class CustomerOTPRequestView(APIView):
-    """
-    Step 1 of customer portal login (UC-03).
-    Customer submits email → system sends OTP.
-    Always returns generic message to prevent account enumeration (OTP-06).
-    """
     permission_classes = [AllowAny]
-    authentication_classes = []  # Disable default authentication
+    authentication_classes = []
 
     def post(self, request):
         serializer = OTPRequestSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        email = serializer.validated_data['email']
+        # Normalize email
+        email = serializer.validated_data['email'].lower().strip()
 
-        # Generic response regardless of whether email exists (OTP-06)
         generic_response = Response({
             'message': 'If this email is registered, a code has been sent.'
         }, status=status.HTTP_200_OK)
 
         try:
-            customer = Customer.objects.get(email=email, is_active=True)
+            customer = Customer.objects.get(email__iexact=email, is_active=True)
         except Customer.DoesNotExist:
             return generic_response
 
-        # Invalidate any existing unused OTPs for this email (OTP-07)
+        # FIX: Deactivate ALL existing unused OTPs for this email (case-insensitive)
         CustomerOTPToken.objects.filter(
-            customer_email=email,
+            customer_email__iexact=email,
             is_used=False
         ).update(is_used=True)
 
@@ -386,10 +340,10 @@ class CustomerOTPRequestView(APIView):
         otp_code   = str(random.randint(100000, 999999))
         otp_hashed = hashlib.sha256(otp_code.encode()).hexdigest()
 
-        # Save hashed OTP to database (OTP-08 — never store plaintext)
+        # Save hashed OTP to database
         CustomerOTPToken.objects.create(
             customer=customer,
-            customer_email=email,
+            customer_email=email, # Save as normalized
             otp_code=otp_hashed,
             expires_at=timezone.now() + timedelta(minutes=10),
             ip_address=request.META.get('REMOTE_ADDR')
@@ -401,7 +355,7 @@ class CustomerOTPRequestView(APIView):
             message=f'Your login code is: {otp_code}\n\nThis code expires in 10 minutes.',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],
-            fail_silently=True
+            fail_silently=False
         )
 
         return generic_response
@@ -410,59 +364,33 @@ class CustomerOTPRequestView(APIView):
 class CustomerOTPVerifyView(APIView):
     """
     Step 2 of customer portal login (UC-03).
-    Customer submits OTP → system returns session token.
+    Verification logic is handled by OTPVerifySerializer.
     """
     permission_classes = [AllowAny]
-    authentication_classes = []  # Disable default authentication
+    authentication_classes = []
 
     def post(self, request):
         serializer = OTPVerifySerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         token = serializer.validated_data['token']
-
-        # Mark OTP as used (prevents replay attacks — OTP-05)
         token.is_used = True
         token.save()
 
         customer = token.customer
+
+        # Generate a simple secure token and store it on the customer
+        access_token = secrets.token_hex(32)
+        customer.access_token = access_token
+        customer.save()
+
         return Response({
             'message': 'Login successful.',
+            'access_token': access_token,
             'customer': CustomerPortalSerializer(customer).data
         }, status=status.HTTP_200_OK)
-    
 
-class StaffRegisterView(APIView):
-    """
-    Staff self registration.
-    AllowAny — no token required for signup.
-    """
-    permission_classes = [AllowAny]  # ← change from IsAdmin to AllowAny
-
-    def post(self, request):
-        serializer = UserRegisterSerializer(
-            data=request.data,
-            context={'request': request}
-        )
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response({
-                'message': f'Account created for {user.username}.',
-                'user': UserProfileSerializer(user).data
-            }, status=status.HTTP_201_CREATED)
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )  
-      
-from django.contrib.auth import authenticate
-from rest_framework.views import APIView
-from rest_framework.decorators import api_view, permission_classes, authentication_classes  # ← add this line
-from rest_framework.authentication import BasicAuthentication
 
 @api_view(['POST'])
 @authentication_classes([])

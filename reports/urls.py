@@ -19,4 +19,5 @@ urlpatterns = [
     path('emails/',                           views.EmailLogListView.as_view(),     name='email-log-list'),
     path('emails/stats/',                     views.EmailLogStatsView.as_view(),    name='email-log-stats'),
     path('emails/<int:pk>/',                  views.EmailLogDetailView.as_view(),   name='email-log-detail'),
+    
 ]

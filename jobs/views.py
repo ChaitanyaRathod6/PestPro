@@ -4,10 +4,10 @@ from django.shortcuts import render
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from django.utils import timezone
 from .models import ServiceJob
-from accounts.models import User
+from accounts.models import Customer, User
 from .serializers import (
     ServiceJobCreateSerializer,
     ServiceJobListSerializer,
@@ -252,25 +252,23 @@ class JobCompleteView(APIView):
         )
 
 
-class JobsByCustomerView(APIView):
-    """
-    List all jobs for a specific customer.
-    Admin and Supervisor only.
-    """
-    permission_classes = [IsAdminOrSupervisor]
+from jobs.serializers import ServiceJobListSerializer
 
-    def get(self, request, customer_id):
-        jobs = ServiceJob.objects.filter(
-            customer_id=customer_id
-        ).order_by('-scheduled_datetime')
+class JobsByCustomerView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    serializer_class = ServiceJobListSerializer  # ← updated
 
-        if not jobs.exists():
-            return Response(
-                {'message': 'No jobs found for this customer.'},
-                status=status.HTTP_200_OK
-            )
-        serializer = ServiceJobListSerializer(jobs, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        customer_id = self.kwargs['customer_id']
+        auth_header = self.request.headers.get('Authorization', '')
+        token = auth_header.replace('Bearer ', '').strip()
+        try:
+            customer = Customer.objects.get(id=customer_id, access_token=token)
+        except Customer.DoesNotExist:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Invalid or expired token.')
+        return ServiceJob.objects.filter(customer_id=customer_id)
 
 
 class JobsByTechnicianView(APIView):
@@ -671,3 +669,48 @@ def staff_detail_stats(request, staff_id):
         'recent_jobs':     recent_data,
         'role':            staff.role,
     })        
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import ServiceJob  # adjust import if needed
+from jobs.authentication import CustomerTokenAuthentication
+
+class JobObservationsView(APIView):
+    authentication_classes = [CustomerTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            job = ServiceJob.objects.get(pk=pk)
+        except ServiceJob.DoesNotExist:
+            return Response({'error': 'Job not found'}, status=404)
+        
+        # Replace with your actual observations field/related model
+        observations = job.observations  # e.g. a TextField or related model
+        return Response({'observations': observations})
+
+    def post(self, request, pk):
+        try:
+            job = ServiceJob.objects.get(pk=pk)
+        except ServiceJob.DoesNotExist:
+            return Response({'error': 'Job not found'}, status=404)
+        
+        # Save observation logic here
+        return Response({'status': 'saved'})
+    
+
+class CustomerReportView(APIView):
+    authentication_classes = [CustomerTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        customer_id = request.query_params.get('customer_id')
+        if not customer_id:
+            return Response({'error': 'customer_id required'}, status=400)
+        
+        # Your report logic here
+        return Response({'customer_id': customer_id, 'report': []})
+
+

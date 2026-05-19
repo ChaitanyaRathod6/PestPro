@@ -12,6 +12,13 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     )
   }
 
+  // Customer uses OTP session stored separately
+  if (allowedRoles?.includes('customer')) {
+    const customer = localStorage.getItem('customer')
+    if (!customer) return <Navigate to="/customer-login" replace />
+    return children
+  }
+
   if (!user || !user.role) {
     return <Navigate to="/login" replace />
   }
