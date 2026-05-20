@@ -64,16 +64,17 @@ class ServiceJobListSerializer(serializers.ModelSerializer):
     Technicians only see their own jobs.
     Admin and Supervisor see all jobs.
     """
-    customer_name = serializers.CharField(
-        source='customer.name', read_only=True
-    )
-    technician_name = serializers.SerializerMethodField()
+    customer_name    = serializers.CharField(source='customer.name', read_only=True)
+    customer_email   = serializers.CharField(source='customer.email', read_only=True)
+    customer_phone   = serializers.CharField(source='customer.phone', read_only=True)
+    customer_company = serializers.CharField(source='customer.company_name', read_only=True)
+    technician_name  = serializers.SerializerMethodField()
 
     class Meta:
         model = ServiceJob
         # FIXED
         fields = [
-    'id', 'job_uuid', 'customer', 'customer_name', 'technician_name',
+    'id', 'job_uuid', 'customer', 'customer_name', 'customer_email', 'customer_phone', 'customer_company', 'technician_name',
     'assigned_technician',
     'service_type', 'status', 'scheduled_datetime',
     'site_address',

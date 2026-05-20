@@ -2,6 +2,7 @@
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from accounts.models import Customer  # adjust import
+from rest_framework.permissions import BasePermission
 
 class CustomerTokenAuthentication(BaseAuthentication):
     def authenticate(self, request):
@@ -17,3 +18,7 @@ class CustomerTokenAuthentication(BaseAuthentication):
             raise AuthenticationFailed('Invalid or expired token.')
         
         return (customer, token)
+    
+class IsCustomer(BasePermission):
+    def has_permission(self, request, view):
+        return request.user is not None      

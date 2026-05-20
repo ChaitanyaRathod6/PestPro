@@ -192,6 +192,36 @@ const S = `
 .cd-bar-lbl { font-size:10px; color:var(--pale); }
 .cd-chart-note { font-size:12px; color:var(--muted); margin-top:8px; }
 .cd-chart-note span { color:var(--g); font-size:13px; }
+/* ENHANCED CHART */
+.cd-chart-wrap { height:120px; margin-top:12px; }
+.cd-chart-bars { display:flex; align-items:flex-end; gap:8px; height:100%; padding-bottom:4px; }
+.cd-bar-col { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; height:100%; justify-content:flex-end; }
+.cd-bar-outer { width:100%; flex:1; display:flex; align-items:flex-end; }
+.cd-bar {
+  border-radius:6px 6px 0 0; width:100%;
+  background:linear-gradient(180deg, var(--g) 0%, var(--gl2) 100%);
+  transition: height .6s cubic-bezier(.4,0,.2,1);
+  position:relative; min-height:3px;
+}
+.cd-bar.active {
+  background:linear-gradient(180deg,#0f4a28 0%,var(--g) 100%);
+  box-shadow:0 -2px 8px rgba(26,107,60,.35);
+}
+.cd-bar.zero { background:var(--border); border-radius:4px; opacity:.5; }
+.cd-bar-count {
+  font-size:11px; font-weight:600; color:var(--g);
+  min-height:16px; display:flex; align-items:center; justify-content:center;
+}
+.cd-bar-count.zero { color:var(--pale); }
+.cd-bar-lbl { font-size:10px; color:var(--pale); letter-spacing:.3px; }
+.cd-bar-lbl.active { color:var(--g); font-size:11px; }
+.cd-chart-footer {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-top:14px; padding-top:10px; border-top:1px solid var(--border);
+}
+.cd-chart-note { font-size:12px; color:var(--muted); }
+.cd-chart-note span { color:var(--g); }
+.cd-chart-peak { font-size:11px; color:var(--pale); }
 
 /* NEXT APPT */
 .cd-appt-hdr { font-size:11px; text-transform:uppercase; letter-spacing:.7px; color:var(--pale); margin-bottom:12px; }
@@ -349,7 +379,12 @@ function buildChartData(jobs) {
     if (diffMonths >= 0 && diffMonths < 6) counts[5 - diffMonths]++
   })
   const max = Math.max(...counts, 1)
-  return labels.map((lbl, i) => ({ lbl, pct: Math.round((counts[i] / max) * 100) || 8, isActive: i === 5 }))
+  return labels.map((lbl, i) => ({
+    lbl,
+    count: counts[i],
+    pct: counts[i] === 0 ? 0 : Math.max(Math.round((counts[i] / max) * 100), 12), // ← 0 stays 0, non-zero min 12%
+    isActive: i === 5
+  }))
 }
 
 function IconSvg({ d, stroke = 'currentColor', size = 17 }) {
@@ -427,9 +462,15 @@ function LiveBanner({ job }) {
 }
 
 function TreatmentRow({ job }) {
+  const navigate = useNavigate()
   const icon = getTreatIcon(job.service_type)
+  
   return (
-    <div className="cd-treat-row">
+    <div 
+      className="cd-treat-row"
+      onClick={() => navigate(`/customer/jobs/${job.id}`)}
+      style={{ cursor: 'pointer' }}
+    >
       <div className="cd-treat-icon" style={{ background: icon.bg }}>
         <IconSvg d={icon.d} stroke={icon.stroke} size={18} />
       </div>
@@ -439,7 +480,12 @@ function TreatmentRow({ job }) {
       </div>
       <span className={`cd-job-tag ${job.status}`}>{cap(job.status)}</span>
       {job.report_url && (
-        <a href={job.report_url} target="_blank" rel="noreferrer">
+        <a 
+          href={job.report_url} 
+          target="_blank" 
+          rel="noreferrer"
+          onClick={e => e.stopPropagation()}  // ← prevents row click when clicking report
+        >
           <button className="cd-treat-btn">View Report</button>
         </a>
       )}
@@ -449,6 +495,9 @@ function TreatmentRow({ job }) {
 
 function ServiceChart({ jobs }) {
   const bars = buildChartData(jobs)
+  const total = bars.reduce((s, b) => s + b.count, 0)
+  const peakMonth = bars.reduce((a, b) => b.count > a.count ? b : a, bars[0])
+
   return (
     <div className="cd-card">
       <div className="cd-card-hdr">
@@ -456,23 +505,68 @@ function ServiceChart({ jobs }) {
           <div className="cd-card-title">Service Activity</div>
           <div className="cd-card-sub">Last 6 months</div>
         </div>
+        <div style={{
+          background: 'var(--gl)', borderRadius: 8, padding: '4px 10px',
+          fontSize: 12, color: 'var(--g)', display: 'flex', alignItems: 'center', gap: 5
+        }}>
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <circle cx="5" cy="5" r="5" fill="var(--g)" opacity=".2"/>
+            <circle cx="5" cy="5" r="3" fill="var(--g)"/>
+          </svg>
+          {total} total
+        </div>
       </div>
+
       <div className="cd-chart-wrap">
         <div className="cd-chart-bars">
           {bars.map(b => (
             <div key={b.lbl} className="cd-bar-col">
-              <div className={`cd-bar${b.isActive ? ' active' : ''}`} style={{ height: `${b.pct}%` }} />
-              <div className="cd-bar-lbl">{b.lbl}</div>
+              {/* Count above bar */}
+              <div className={`cd-bar-count${b.count === 0 ? ' zero' : ''}`}>
+                {b.count > 0 ? b.count : '·'}
+              </div>
+
+              {/* Bar wrapper for proportional height */}
+              <div className="cd-bar-outer">
+                <div
+                  className={`cd-bar${b.isActive ? ' active' : ''}${b.count === 0 ? ' zero' : ''}`}
+                  style={{ height: b.count === 0 ? '6px' : `${b.pct}%` }}
+                >
+                  {/* Shine effect on non-zero bars */}
+                  {b.count > 0 && (
+                    <div style={{
+                      position: 'absolute', top: 0, left: 0, right: 0,
+                      height: '40%', background: 'rgba(255,255,255,.15)',
+                      borderRadius: '6px 6px 0 0'
+                    }}/>
+                  )}
+                </div>
+              </div>
+
+              {/* Month label */}
+              <div className={`cd-bar-lbl${b.isActive ? ' active' : ''}`}>
+                {b.lbl}
+              </div>
             </div>
           ))}
         </div>
       </div>
-      <div className="cd-chart-note"><span>↑ Tracked</span> &nbsp;{jobs.length} total services on record</div>
+
+      <div className="cd-chart-footer">
+        <div className="cd-chart-note">
+          <span>↑ {total}</span> services tracked · last 6 months
+        </div>
+        {peakMonth.count > 0 && (
+          <div className="cd-chart-peak">
+            Peak: {peakMonth.lbl} ({peakMonth.count})
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
-function NextAppointment({ job }) {
+function NextAppointment({ job, onReschedule }) {
   if (!job) {
     return (
       <div className="cd-card">
@@ -508,7 +602,9 @@ function NextAppointment({ job }) {
           </div>
         )}
       </div>
-      <button className="cd-reschedule-btn">Reschedule</button>
+      <button className="cd-reschedule-btn" onClick={onReschedule}>  {/* ← added onClick */}
+        Reschedule
+      </button>
     </div>
   )
 }
@@ -562,6 +658,33 @@ export default function CustomerDashboard() {
   const isMounted = useRef(true)
   const autoRefreshTimer = useRef(null)
   const countdownTimer = useRef(null)
+  const [rescheduleJob, setRescheduleJob] = useState(null)
+const [newDate, setNewDate] = useState('')
+const [rescheduling, setRescheduling] = useState(false)
+
+const handleReschedule = async () => {
+  if (!newDate) return
+  setRescheduling(true)
+  try {
+    const token = localStorage.getItem('access_token')
+    const res = await fetch(`/api/jobs/${rescheduleJob.id}/reschedule/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ scheduled_datetime: newDate }),
+    })
+    if (!res.ok) throw new Error('Failed to reschedule')
+    setRescheduleJob(null)
+    setNewDate('')
+    await fetchData({ silent: true })
+  } catch (err) {
+    alert('Could not reschedule: ' + err.message)
+  } finally {
+    setRescheduling(false)
+  }
+}
 
   // FIX 1: Read customer once into a ref so it's stable across renders
   const customerRef = useRef((() => {
@@ -937,7 +1060,7 @@ export default function CustomerDashboard() {
                   </div>
 
                   <div className="cd-right-col">
-                    <NextAppointment job={nextJob} />
+                    <NextAppointment job={nextJob} onReschedule={() => setRescheduleJob(nextJob)} />
                     <EcoCard completedJobs={completedJobs} totalJobs={totalJobs} />
                     <div className="cd-cta">
                       <div className="cd-cta-lbl">Service Summary</div>
@@ -990,6 +1113,57 @@ export default function CustomerDashboard() {
             )}
           </div>
         </div>
+        {/* RESCHEDULE MODAL */}
+{rescheduleJob && (
+  <div style={{
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999
+  }}>
+    <div style={{
+      background: '#fff', borderRadius: 16, padding: 28, width: 340,
+      fontFamily: "'DM Serif Display', serif", boxShadow: '0 8px 32px rgba(0,0,0,.18)'
+    }}>
+      <div style={{ fontSize: 17, color: 'var(--ink)', marginBottom: 6 }}>Reschedule Service</div>
+      <div style={{ fontSize: 12, color: 'var(--pale)', marginBottom: 20 }}>
+        Job #{rescheduleJob.id} · {cap(rescheduleJob.service_type)}
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>New Date & Time</div>
+      <input
+        type="datetime-local"
+        value={newDate}
+        onChange={e => setNewDate(e.target.value)}
+        style={{
+          width: '100%', padding: '9px 12px', borderRadius: 9,
+          border: '1.5px solid var(--border)', fontFamily: "'DM Serif Display', serif",
+          fontSize: 13, marginBottom: 18, outline: 'none'
+        }}
+      />
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button
+          onClick={() => { setRescheduleJob(null); setNewDate('') }}
+          style={{
+            flex: 1, padding: '9px', borderRadius: 9, border: '1.5px solid var(--border)',
+            background: 'none', cursor: 'pointer', fontFamily: "'DM Serif Display', serif", fontSize: 13
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleReschedule}
+          disabled={!newDate || rescheduling}
+          style={{
+            flex: 1, padding: '9px', borderRadius: 9, border: 'none',
+            background: newDate ? 'var(--g)' : 'var(--pale)', color: '#fff',
+            cursor: newDate ? 'pointer' : 'not-allowed',
+            fontFamily: "'DM Serif Display', serif", fontSize: 13
+          }}
+        >
+          {rescheduling ? 'Saving…' : 'Confirm'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </>
   )

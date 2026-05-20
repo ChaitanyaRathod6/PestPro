@@ -244,58 +244,65 @@ export default function TechnicianCustomerDetailPage() {
      from the job fields (customer_name, etc.).
   ───────────────────────────────────────── */
   const fetchAll = useCallback(async (silent = false) => {
-    if (!silent) setError('')
+  if (!silent) setError('')
+  try {
+    const res = await api.get('/jobs/')
+    if (!isMounted.current) return
+
+    const allJobs = res.data?.results || res.data || []
+
+    const myJobs = allJobs
+      .filter(j => (j.customer ?? j.customer_id) === customerId)
+      .sort((a, b) => new Date(b.scheduled_datetime) - new Date(a.scheduled_datetime))
+
+    if (myJobs.length === 0) {
+      setError('No jobs found for this customer, or you do not have access.')
+      setLoading(false)
+      return
+    }
+
+    setJobs(myJobs)
+
+    // ── Fetch real customer data directly ──
     try {
-      const res = await api.get('/jobs/')
-      if (!isMounted.current) return
-
-      const allJobs = res.data?.results || res.data || []
-
-      // Filter to jobs belonging to this customer
-      const myJobs = allJobs
-        .filter(j => (j.customer ?? j.customer_id) === customerId)
-        .sort((a, b) => new Date(b.scheduled_datetime) - new Date(a.scheduled_datetime))
-
-      if (myJobs.length === 0) {
-        // No jobs found for this customer ID at all
-        setError('No jobs found for this customer, or you do not have access.')
-        setLoading(false)
-        return
+      const custRes = await api.get(`/customers/${customerId}/`)
+      if (isMounted.current && custRes.data) {
+        setCustomer({
+          id:           customerId,
+          name:         custRes.data.name || custRes.data.full_name || `Customer #${customerId}`,
+          email:        custRes.data.email || '',
+          phone:        custRes.data.phone || custRes.data.phone_number || '',
+          company_name: custRes.data.company_name || custRes.data.company || '',
+          address:      custRes.data.address || myJobs[0]?.site_address || '',
+          city:         custRes.data.city || '',
+        })
       }
-
-      // Build a customer object from the fields carried on each job.
-      // Use the first job as the primary source; later jobs may fill gaps.
+    } catch {
+      // ── Fallback: build from job fields if customer API fails ──
       const built = {
         id:           customerId,
-        name:         '',
-        email:        '',
-        phone:        '',
-        company_name: '',
-        address:      '',
-        city:         '',
+        name:         myJobs[0]?.customer_name || `Customer #${customerId}`,
+        email:        myJobs[0]?.customer_email || '',
+        phone:        myJobs[0]?.customer_phone || '',
+        company_name: myJobs[0]?.customer_company || '',
+        address:      myJobs[0]?.site_address || '',
+        city:         myJobs[0]?.site_city || '',
       }
       myJobs.forEach(j => {
-        if (!built.name         && j.customer_name)    built.name         = j.customer_name
         if (!built.email        && j.customer_email)   built.email        = j.customer_email
         if (!built.phone        && j.customer_phone)   built.phone        = j.customer_phone
         if (!built.company_name && j.customer_company) built.company_name = j.customer_company
-        if (!built.address      && j.site_address)     built.address      = j.site_address
-        if (!built.city         && j.site_city)        built.city         = j.site_city
       })
-
-      // Fallback name so the page is never blank
-      if (!built.name) built.name = `Customer #${customerId}`
-
-      setCustomer(built)
-      setJobs(myJobs)
-
-    } catch (e) {
-      if (!silent && isMounted.current)
-        setError(e.response?.data?.error || 'Failed to load customer details.')
-    } finally {
-      if (isMounted.current) setLoading(false)
+      if (isMounted.current) setCustomer(built)
     }
-  }, [customerId])
+
+  } catch (e) {
+    if (!silent && isMounted.current)
+      setError(e.response?.data?.error || 'Failed to load customer details.')
+  } finally {
+    if (isMounted.current) setLoading(false)
+  }
+}, [customerId])
 
   /* ── auto-refresh ── */
   const resetTimer = useCallback(() => {
@@ -481,13 +488,13 @@ export default function TechnicianCustomerDetailPage() {
                           <div className="tc-info-label">Phone</div>
                           <div className="tc-info-value">
                             {customer.phone
-                              ? <a href={`tel:${customer.phone}`} style={{ color: 'var(--green)', textDecoration: 'none' }}>{customer.phone}</a>
+                              ? <a href={`tel:${customer.phone}`} style={{ color: 'var(--ink)', textDecoration: 'none' }}>{customer.phone}</a>
                               : '—'}
                           </div>
                         </div>
                         <div className="tc-info-cell">
                           <div className="tc-info-label">Email</div>
-                          <div className="tc-info-value muted" style={{ fontSize: 13, wordBreak: 'break-all' }}>
+                          <div className="tc-info-value" style={{ fontSize: 13, wordBreak: 'break-all' }}>
                             {customer.email || '—'}
                           </div>
                         </div>

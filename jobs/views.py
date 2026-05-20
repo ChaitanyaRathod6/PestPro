@@ -1,3 +1,5 @@
+from urllib import request
+
 from django.shortcuts import render
 
 # Create your views here.
@@ -6,6 +8,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from django.utils import timezone
+
+from reports.models import PDFReport
+from reports.serializers import PDFReportSerializer
 from .models import ServiceJob
 from accounts.models import Customer, User
 from .serializers import (
@@ -253,6 +258,7 @@ class JobCompleteView(APIView):
 
 
 from jobs.serializers import ServiceJobListSerializer
+from accounts.models import Customer
 
 class JobsByCustomerView(generics.ListAPIView):
     permission_classes = [AllowAny]
@@ -263,13 +269,17 @@ class JobsByCustomerView(generics.ListAPIView):
         customer_id = self.kwargs['customer_id']
         auth_header = self.request.headers.get('Authorization', '')
         token = auth_header.replace('Bearer ', '').strip()
+    # fallback to query param if header stripped
+        if not token:
+            token = self.request.query_params.get('token', '')
         try:
             customer = Customer.objects.get(id=customer_id, access_token=token)
         except Customer.DoesNotExist:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('Invalid or expired token.')
-        return ServiceJob.objects.filter(customer_id=customer_id)
-
+        return ServiceJob.objects.filter(
+            customer_id=customer_id
+        ).select_related('customer', 'assigned_technician')
 
 class JobsByTechnicianView(APIView):
     """
@@ -675,42 +685,115 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import ServiceJob  # adjust import if needed
-from jobs.authentication import CustomerTokenAuthentication
+from jobs.authentication import CustomerTokenAuthentication,IsCustomer
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 
-class JobObservationsView(APIView):
-    authentication_classes = [CustomerTokenAuthentication]
-    permission_classes = [IsAuthenticated]
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+@authentication_classes([]) 
+def job_observations(request, pk):
+    from observations.models import ServiceObservation
+    from observations.serializers import ServiceObservationSerializer
 
-    def get(self, request, pk):
+    auth_header = request.headers.get('Authorization', '')
+    token = auth_header.replace('Bearer ', '').strip() if auth_header else ''
+    if not token:
+        token = request.query_params.get('token', '')
+
+    # ── STEP 1: Determine who is calling ──
+    is_staff = False
+    is_customer = False
+
+    # Check if it's a staff user (JWT token — admin/supervisor/technician)
+    if token:
         try:
-            job = ServiceJob.objects.get(pk=pk)
-        except ServiceJob.DoesNotExist:
-            return Response({'error': 'Job not found'}, status=404)
-        
-        # Replace with your actual observations field/related model
-        observations = job.observations  # e.g. a TextField or related model
-        return Response({'observations': observations})
+            from rest_framework_simplejwt.tokens import AccessToken
+            AccessToken(token)  # validates JWT
+            is_staff = True
+        except Exception:
+            pass
 
-    def post(self, request, pk):
+    # If not staff, check if it's a customer (hex token)
+    if not is_staff and token:
         try:
-            job = ServiceJob.objects.get(pk=pk)
-        except ServiceJob.DoesNotExist:
-            return Response({'error': 'Job not found'}, status=404)
-        
-        # Save observation logic here
-        return Response({'status': 'saved'})
+            from accounts.models import Customer
+            Customer.objects.get(access_token=token)
+            is_customer = True
+        except Exception:
+            pass
+
+    # ── STEP 2: Reject if neither ──
+    if not is_staff and not is_customer:
+        return Response({'error': 'Authentication required.'}, status=401)
+
+    # ── STEP 3: Fetch job ──
+    try:
+        job = ServiceJob.objects.get(pk=pk)
+    except ServiceJob.DoesNotExist:
+        return Response({'error': 'Job not found'}, status=404)
+
+    # ── STEP 4: Customer can only see their own job's observations ──
+    if is_customer:
+        from accounts.models import Customer
+        try:
+            customer = Customer.objects.get(access_token=token)
+            if job.customer_id != customer.id:
+                return Response({'error': 'Access denied.'}, status=403)
+        except Customer.DoesNotExist:
+            return Response({'error': 'Access denied.'}, status=403)
+
+    # ── STEP 5: Return observations ──
+    if request.method == 'GET':
+        obs = ServiceObservation.objects.filter(job=job).select_related(
+            'rodent_detail', 'flying_insect_detail', 'cockroach_detail',
+            'termite_detail', 'mosquito_detail', 'general_detail',
+        )
+        return Response(ServiceObservationSerializer(obs, many=True).data)
+
+    return Response({'status': 'saved'})
     
 
-class CustomerReportView(APIView):
-    authentication_classes = [CustomerTokenAuthentication]
-    permission_classes = [IsAuthenticated]
+class CustomerPDFReportListView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def get(self, request):
         customer_id = request.query_params.get('customer_id')
-        if not customer_id:
-            return Response({'error': 'customer_id required'}, status=400)
-        
-        # Your report logic here
-        return Response({'customer_id': customer_id, 'report': []})
+        auth_header = request.headers.get('Authorization', '')
+        token = auth_header.replace('Bearer ', '').strip()
+        if not token:
+            token = request.query_params.get('token', '')
+
+        try:
+            customer = Customer.objects.get(id=customer_id, access_token=token)
+        except Customer.DoesNotExist:
+            return Response({'error': 'Invalid or expired token.'}, status=403)
+
+        reports = PDFReport.objects.select_related(
+            'job', 'job__customer', 'generated_by'
+        ).filter(job__customer=customer).order_by('-generated_at')
+
+        serializer = PDFReportSerializer(reports, many=True, context={'request': request})
+        return Response({'count': reports.count(), 'results': serializer.data})
 
 
+from jobs.authentication import CustomerTokenAuthentication, IsCustomer
+
+class JobRescheduleView(APIView):
+    authentication_classes = [CustomerTokenAuthentication]
+    permission_classes = [IsCustomer]  # ← use this instead of IsAuthenticated
+
+    def patch(self, request, pk):
+        try:
+            job = ServiceJob.objects.get(pk=pk)
+        except ServiceJob.DoesNotExist:
+            return Response({'error': 'Job not found'}, status=404)
+
+        new_dt = request.data.get('scheduled_datetime')
+        if not new_dt:
+            return Response({'error': 'scheduled_datetime required'}, status=400)
+
+        job.scheduled_datetime = new_dt
+        job.status = 'scheduled'
+        job.save()
+        return Response({'status': 'rescheduled', 'scheduled_datetime': new_dt})
