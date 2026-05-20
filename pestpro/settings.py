@@ -51,13 +51,13 @@ INSTALLED_APPS = [
     'reports',
     'portal',
     'rest_framework',
-    'rest_framework_simplejwt',
+    # 'rest_framework_simplejwt',
     'corsheaders',
-    'rest_framework_simplejwt.token_blacklist',
+    # 'rest_framework_simplejwt.token_blacklist',
     # 'reports.apps.ReportsConfig', 
     "redis",
     'django_celery_results',
-    
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -161,7 +161,8 @@ AUTH_USER_MODEL = 'accounts.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'accounts.authentication.CustomerTokenAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
@@ -169,6 +170,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
 }
+
 
 # Redirect after browsable API login
 LOGIN_REDIRECT_URL = '/api/jobs/'

@@ -106,23 +106,29 @@ class ServiceJobListCreateView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+from rest_framework.authentication import TokenAuthentication
+from jobs.authentication import CustomerTokenAuthentication
 
 class ServiceJobDetailView(APIView):
     """
     GET   — View full job details
     PATCH — Update job details (Admin/Supervisor only)
     """
+    authentication_classes = [CustomerTokenAuthentication,TokenAuthentication,]
     permission_classes = [IsAuthenticated]
+
 
     def get_object(self, pk, user):
         try:
             job = ServiceJob.objects.get(pk=pk)
-            # Technician can only view their own jobs (RBAC-10 test case)
-            if user.role == 'technician' and job.assigned_technician != user:
-                return None, True  # None=not found, True=forbidden
+            user_role = getattr(user, 'role', None)
+            if user_role == 'technician' and job.assigned_technician != user:
+                return None, True
             return job, False
         except ServiceJob.DoesNotExist:
             return None, False
+        
+   
 
     def get(self, request, pk):
         job, forbidden = self.get_object(pk, request.user)
@@ -262,24 +268,35 @@ from accounts.models import Customer
 
 class JobsByCustomerView(generics.ListAPIView):
     permission_classes = [AllowAny]
-    authentication_classes = []
-    serializer_class = ServiceJobListSerializer  # ← updated
+    authentication_classes = [] # Keep this empty as you are doing manual token check
+    serializer_class = ServiceJobListSerializer
 
     def get_queryset(self):
         customer_id = self.kwargs['customer_id']
         auth_header = self.request.headers.get('Authorization', '')
-        token = auth_header.replace('Bearer ', '').strip()
-    # fallback to query param if header stripped
+        
+        # Handle both 'Token' and 'Bearer' prefixes
+        token = ""
+        if 'Token ' in auth_header:
+            token = auth_header.replace('Token ', '').strip()
+        elif 'Bearer ' in auth_header:
+            token = auth_header.replace('Bearer ', '').strip()
+        
         if not token:
             token = self.request.query_params.get('token', '')
+
         try:
+            # This matches your Customer model's access_token field
             customer = Customer.objects.get(id=customer_id, access_token=token)
         except Customer.DoesNotExist:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('Invalid or expired token.')
+
         return ServiceJob.objects.filter(
             customer_id=customer_id
         ).select_related('customer', 'assigned_technician')
+
+
 
 class JobsByTechnicianView(APIView):
     """

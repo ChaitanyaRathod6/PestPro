@@ -1,3 +1,33 @@
+// import { defineConfig } from 'vite'
+// import react from '@vitejs/plugin-react'
+// import tailwindcss from '@tailwindcss/vite'
+
+// export default defineConfig({
+//   plugins: [
+//     react(),
+//     tailwindcss(),
+//   ],
+//   server: {
+//     proxy: {
+//       '/api': {
+//         target: 'http://127.0.0.1:8000',
+//         changeOrigin: true,
+//         // configure: (proxy) => {
+//         //   proxy.on('proxyReq', (proxyReq, req) => {
+//         //     if (req.headers['authorization']) {
+//         //       proxyReq.setHeader('Authorization', req.headers['authorization'])
+//         //     }
+//         //   })
+//         // }
+//       },
+//       '/media': {
+//         target: 'http://127.0.0.1:8000',
+//         changeOrigin: true,
+//       }
+//     }
+//   }
+// })
+
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -12,13 +42,7 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
-            if (req.headers['authorization']) {
-              proxyReq.setHeader('Authorization', req.headers['authorization'])
-            }
-          })
-        }
+        // No manual 'configure' block needed
       },
       '/media': {
         target: 'http://127.0.0.1:8000',
@@ -26,4 +50,4 @@ export default defineConfig({
       }
     }
   }
-})
+} )

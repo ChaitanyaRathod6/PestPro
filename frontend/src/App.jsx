@@ -27,6 +27,8 @@ import TechnicianCustomerDetailPage from './pages/technician/TechnicianCustomerD
 import TechnicianCustomerDetailPageCombine from './pages/technician/tech'
 import SupervisorJobDetailPage from './pages/supervisor/SupervisorJobDetailPage'
 import CustomerJobDetail from './pages/customer/CustomerJobDetailPage'
+import CustomerJobsPage from './pages/customer/CustomerMyJobPage'
+import CustomerReportsPage from './pages/customer/CustomerReportPage'
 
 function App() {
   return (
@@ -71,6 +73,8 @@ function App() {
           {/* Customer dashboard */}
           <Route path="/customer" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard /></ProtectedRoute>} />
           <Route path="/customer/jobs/:id" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerJobDetail /></ProtectedRoute>} />
+          <Route path="/customer/jobs" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerJobsPage /></ProtectedRoute>} />
+          <Route path="/customer/reports" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerReportsPage /></ProtectedRoute>} />
 
           {/* Unauthorized */}
           <Route path="/unauthorized" element={

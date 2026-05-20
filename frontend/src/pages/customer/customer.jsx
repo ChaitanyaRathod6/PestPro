@@ -727,21 +727,25 @@ const handleReschedule = async () => {
 
       const token = localStorage.getItem('access_token')
 
-      const [jr, rr] = await Promise.all([
-  fetch(`/api/jobs/customer/${customerId}/`, {
+      // --- CORRECTED CODE BLOCK ---
+const [jr, rr] = await Promise.all([
+  // 1. Fixed URL (added /jobs/) and Auth (changed Bearer to Token)
+  fetch(`/api/jobs/customer/${customerId}/jobs/`, {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Token ${token}`, 
     },
   }).then(safeJson),
 
-  fetch(`/api/reports/?customer_id=${customerId}`, {
+  // 2. Fixed URL (changed to path style) and Auth (changed Bearer to Token)
+  fetch(`/api/reports/customer/${customerId}/`, {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Token ${token}`,
     },
-  }).then(safeJson).catch(() => []),  // ← reports failure won't block jobs
+  }).then(safeJson).catch(() => []), 
 ])
+
 
       if (!isMounted.current) return
 
@@ -886,12 +890,21 @@ const handleReschedule = async () => {
           </div>
           <nav className="cd-sb-nav">
             {navItems.map(n => (
-              <div key={n.id}
-                className={`cd-nav-item${active === n.id ? ' active' : ''}`}
-                onClick={() => { setActive(n.id); setSidebarOpen(false) }}>
-                <IconSvg d={n.d} />
-                {n.label}
-              </div>
+              // REPLACE with:
+<div key={n.id}
+  className={`cd-nav-item${active === n.id ? ' active' : ''}`}
+  onClick={() => {
+    setActive(n.id)
+    setSidebarOpen(false)
+    if (n.id === 'jobs')     navigate('/customer/jobs')
+    if (n.id === 'reports')  navigate('/customer/reports')
+    if (n.id === 'profile')  navigate('/customer/profile')
+    if (n.id === 'support')  navigate('/customer/support')
+    if (n.id === 'dashboard') navigate('/customer')
+  }}>
+  <IconSvg d={n.d} />
+  {n.label}
+</div>
             ))}
           </nav>
           <div className="cd-sb-footer">

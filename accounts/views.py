@@ -243,9 +243,14 @@ class CustomerPublicRegisterView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from .authentication import CustomerTokenAuthentication, IsCustomer 
 
 class CustomerDetailView(APIView):
-    permission_classes = [IsAdmin]
+    
+    authentication_classes = [CustomerTokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -361,11 +366,11 @@ class CustomerOTPRequestView(APIView):
         return generic_response
 
 
+from rest_framework.authtoken.models import Token
+
+
+
 class CustomerOTPVerifyView(APIView):
-    """
-    Step 2 of customer portal login (UC-03).
-    Verification logic is handled by OTPVerifySerializer.
-    """
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -374,13 +379,13 @@ class CustomerOTPVerifyView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        token = serializer.validated_data['token']
-        token.is_used = True
-        token.save()
+        otp_token = serializer.validated_data['token']
+        otp_token.is_used = True
+        otp_token.save()
 
-        customer = token.customer
+        customer = otp_token.customer
 
-        # Generate a simple secure token and store it on the customer
+        # Generate and store token directly on customer
         access_token = secrets.token_hex(32)
         customer.access_token = access_token
         customer.save()

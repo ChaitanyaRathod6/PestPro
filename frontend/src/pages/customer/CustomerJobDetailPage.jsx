@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-
+const API_BASE = "http://localhost:8000";
 /* ─────────────────────────────────────────────
    HELPERS
 ───────────────────────────────────────────── */
@@ -78,9 +78,9 @@ const S = `
   --sidebar-w:220px;
 }
 
-body{font-family:'DM Sans',sans-serif;}
+body{font-family:'DM Serif Display',serif;}
 
-.cjd-root{font-family:'DM Sans',sans-serif;min-height:100vh;background:var(--bg);display:flex;}
+.cjd-root{font-family:'DM Serif Display',serif;min-height:100vh;background:var(--bg);display:flex;}
 
 /* ── OVERLAY (mobile) ── */
 .cjd-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:150;}
@@ -215,9 +215,9 @@ body{font-family:'DM Sans',sans-serif;}
 .cjd-obs-level.medium{background:#fff8ec;color:var(--amber);}
 .cjd-obs-level.low{background:var(--green-light);color:var(--green);}
 .cjd-obs-level.none{background:#f0f2f0;color:var(--muted);}
-.cjd-obs-summary{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:8px;padding-top:8px;border-top:1px solid #f5f7f5;font-family:'DM Sans',sans-serif;}
+.cjd-obs-summary{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:8px;padding-top:8px;border-top:1px solid #f5f7f5;font-family:'DM Serif Display',serif;}
 .cjd-obs-tags{display:flex;gap:6px;flex-wrap:wrap;}
-.cjd-obs-tag{font-size:11px;padding:3px 9px;border-radius:6px;background:var(--bg);color:var(--muted);font-family:'DM Sans',sans-serif;}
+.cjd-obs-tag{font-size:11px;padding:3px 9px;border-radius:6px;background:var(--bg);color:var(--muted);font-family:'DM Serif Display',serif;}
 .cjd-obs-tag.yes{background:var(--green-light);color:var(--green);}
 .cjd-obs-tag.warn{background:#fff8ec;color:var(--amber);}
 .cjd-obs-tag.danger{background:#fde8e8;color:var(--red);}
@@ -252,7 +252,7 @@ body{font-family:'DM Sans',sans-serif;}
 /* ── SUMMARY ROWS ── */
 .cjd-sum-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f5f7f5;}
 .cjd-sum-row:last-child{border-bottom:none;}
-.cjd-sum-label{font-size:13px;color:var(--muted);font-family:'DM Sans',sans-serif;}
+.cjd-sum-label{font-size:13px;color:var(--muted);font-family:'DM Serif Display',serif;}
 .cjd-sum-val{font-size:13.5px;color:var(--ink);font-family:'DM Serif Display',serif;}
 .cjd-sum-val.green{color:var(--green);}
 .cjd-sum-val.amber{color:var(--amber);}
@@ -329,37 +329,62 @@ export default function CustomerJobDetail() {
   }
 
   /* ── FETCH ── */
-  const fetchData = useCallback(async (silent = false) => {
-  const token = localStorage.getItem('access_token') || ''
-  const cust  = JSON.parse(localStorage.getItem('customer') || '{}')
-  const cid   = cust.id
+    const fetchData = useCallback(async (silent = false) => {
+    // 1. Get Customer and Token (with fallbacks)
+    const cust = JSON.parse(localStorage.getItem('customer') || '{}')
+    const cid  = cust.id
+    const token = localStorage.getItem('access_token') || cust.token || cust.access_token || ''
 
-  if (!token || !cid) { setError('Session expired. Please log in again.'); setLoading(false); return }
+    if (!token || !cid) { 
+      setError('Session expired. Please log in again.'); 
+      setLoading(false); 
+      return 
+    }
 
-  try {
-    const headers = { Authorization: `Bearer ${token}` }
-    const [jobRes, obsRes, reportRes] = await Promise.all([
-  fetch(`/api/jobs/customer/${cid}/`, { headers }).then(r => r.json()),
-  fetch(`/api/jobs/${id}/observations/?customer_id=${cid}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
-  fetch(`/api/reports/customer/?customer_id=${cid}`, { headers }).then(r => r.ok ? r.json() : { results: [] }).catch(() => ({ results: [] })),
+    try {
+      if (!silent) setLoading(true)
+      
+      // 2. Use 'Token' prefix as required by your Django backend
+      const headers = { 
+        'Authorization': `Token ${token}`,
+        'Content-Type': 'application/json'
+      }
+
+      // 3. Use the "Customer-Namespaced" URLs (same as your Dashboard)
+     const [jobRes, obsRes, reportRes] = await Promise.all([
+  fetch(`${API_BASE}/api/jobs/${id}/`, { headers }).then(r => r.ok ? r.json() : null),
+  fetch(`${API_BASE}/api/observations/?job=${id}`, { headers }).then(r => r.ok ? r.json() : []),
+  fetch(`${API_BASE}/api/customer/${cid}/`, { headers }).then(r => r.ok ? r.json() : { results: [] })
 ])
-    if (!isMounted.current) return
 
-    const jobs  = Array.isArray(jobRes) ? jobRes : (jobRes.results || [])
-    const found = jobs.find(j => String(j.id) === String(id))
-    if (!found) { setError('Job not found.'); setLoading(false); return }
+console.log('token:', token)
+console.log('id:', id)
 
-    setJob(found)
-    const obsArr = obsRes?.results || obsRes || []
-    setObservations(Array.isArray(obsArr) ? obsArr : [])
-    const allRep = reportRes?.results || []
-    setReports(allRep.filter(r => String(r.job) === String(id) || String(r.job_id) === String(id)))
-  } catch {
-    if (isMounted.current && !silent) setError('Failed to load job details.')
-  } finally {
-    if (isMounted.current) setLoading(false)
-  }
-}, [id])
+      if (!isMounted.current) return
+
+      // 4. Handle the results
+      if (!jobRes) {
+        setError('Job details not found.');
+        return;
+      }
+      setJob(jobRes)
+
+      const obsArr = obsRes?.results || obsRes || []
+      setObservations(Array.isArray(obsArr) ? obsArr : [])
+
+      const allRep = reportRes?.results || (Array.isArray(reportRes) ? reportRes : [])
+      setReports(allRep)
+
+      setError('')
+    } catch (err) {
+      console.error("Fetch Error:", err)
+      if (isMounted.current && !silent) setError('Failed to load job details.')
+    } finally {
+      if (isMounted.current) setLoading(false)
+    }
+  }, [id])
+// Function ends here correctly
+
 
   /* ── AUTO REFRESH ── */
   const resetTimer = useCallback(() => {

@@ -7,10 +7,12 @@ from rest_framework.permissions import BasePermission
 class CustomerTokenAuthentication(BaseAuthentication):
     def authenticate(self, request):
         auth_header = request.headers.get('Authorization', '')
-        if not auth_header.startswith('Bearer '):
+        print(f"AUTH HEADER: '{auth_header}'")  # add this
+        if not auth_header.startswith('Token'):
             return None
         
         token = auth_header.split(' ')[1]
+        print(f"TOKEN: '{token}'")
         
         try:
             customer = Customer.objects.get(access_token=token)

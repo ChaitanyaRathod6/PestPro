@@ -44,6 +44,28 @@ class PDFReportListView(APIView):
             'count':   reports.count(),
             'results': serializer.data
         })
+    
+
+from rest_framework.permissions import IsAuthenticated
+
+class PDFReportByCustomerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, customer_id):
+        if hasattr(request.user, 'customer_profile'):
+            if request.user.customer_profile.id != customer_id:
+                return Response({'detail': 'Forbidden'}, status=403)
+
+        reports = PDFReport.objects.select_related(
+            'job', 'job__customer', 'generated_by'
+        ).filter(
+            job__customer_id=customer_id
+        ).order_by('-generated_at')
+
+        serializer = PDFReportSerializer(
+            reports, many=True, context={'request': request}
+        )
+        return Response({'count': reports.count(), 'results': serializer.data})    
 
 
 class PDFReportDetailView(APIView):

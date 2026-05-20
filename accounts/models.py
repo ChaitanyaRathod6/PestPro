@@ -93,6 +93,10 @@ class Customer(models.Model):
  
     def __str__(self):
         return f"{self.name} — {self.city}"
+    
+    @property
+    def is_authenticated(self):
+        return True
  
     class Meta:
         db_table = 'customer'
